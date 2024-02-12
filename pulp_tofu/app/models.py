@@ -40,6 +40,7 @@ class TofuContent(Content):
     """
 
     TYPE = "tofu"
+    version = models.TextField()
 
     class Meta:
         default_related_name = "%(app_label)s_%(model_name)s"
@@ -66,6 +67,9 @@ class TofuRemote(Remote):
     """
 
     TYPE = "tofu"
+    DEFAULT_DOWNLOAD_CONCURRENCY = 10
+    includes = models.JSONField(default=list)
+    excludes = models.JSONField(default=list)
 
     class Meta:
         default_related_name = "%(app_label)s_%(model_name)s"

@@ -16,11 +16,9 @@ from pulp_smash.pulp3.constants import (
 # DOWNLOAD_POLICIES = ["immediate", "streamed", "on_demand"]
 DOWNLOAD_POLICIES = ["immediate"]
 
-# FIXME: replace 'unit' with your own content type names, and duplicate as necessary for each type
-TOFU_CONTENT_NAME = "tofu.unit"
+TOFU_CONTENT_NAME = "tofu.tofu"
 
-# FIXME: replace 'unit' with your own content type names, and duplicate as necessary for each type
-TOFU_CONTENT_PATH = urljoin(BASE_CONTENT_PATH, "tofu/units/")
+TOFU_CONTENT_PATH = urljoin(BASE_CONTENT_PATH, "tofu/tofu/")
 
 TOFU_REMOTE_PATH = urljoin(BASE_REMOTE_PATH, "tofu/tofu/")
 

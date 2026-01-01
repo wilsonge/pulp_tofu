@@ -27,12 +27,17 @@ from . import models, serializers, tasks
 class TofuContentFilter(core.ContentFilter):
     """
     FilterSet for TofuContent.
+
+    Allows filtering modules by namespace, name, system, and version.
     """
 
     class Meta:
         model = models.TofuContent
         fields = [
-            # ...
+            "namespace",
+            "name",
+            "system",
+            "version",
         ]
 
 
@@ -40,11 +45,9 @@ class TofuContentViewSet(core.ContentViewSet):
     """
     A ViewSet for TofuContent.
 
-    Define endpoint name which will appear in the API endpoint for this content type.
-    For example::
-        https://pulp.example.com/pulp/api/v3/content/tofu/units/
+    Provides REST API endpoints for managing OpenTofu module content units.
 
-    Also specify queryset and serializer for TofuContent.
+    Endpoint: /pulp/api/v3/content/tofu/units/
     """
 
     endpoint_name = "tofu"
@@ -55,53 +58,32 @@ class TofuContentViewSet(core.ContentViewSet):
     @transaction.atomic
     def create(self, request):
         """
-        Perform bookkeeping when saving Content.
+        Create a TofuContent unit with its associated artifact.
 
-        "Artifacts" need to be popped off and saved indpendently, as they are not actually part
-        of the Content model.
+        Each OpenTofu module has a single artifact (the module archive/source).
+        The artifact is associated with a relative path based on the module's
+        namespace, name, system, and version.
         """
-        return Response({}, status=status.HTTP_501_NOT_IMPLEMENTED)
-        # This requires some choice. Depending on the properties of your content type - whether it
-        # can have zero, one, or many artifacts associated with it, and whether any properties of
-        # the artifact bleed into the content type (such as the digest), you may want to make
-        # those changes here.
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # A single artifact per content, serializer subclasses SingleArtifactContentSerializer
-        # ======================================
-        # _artifact = serializer.validated_data.pop("_artifact")
-        # # you can save model fields directly, e.g. .save(digest=_artifact.sha256)
-        # content = serializer.save()
-        #
-        # if content.pk:
-        #     ContentArtifact.objects.create(
-        #         artifact=artifact,
-        #         content=content,
-        #         relative_path= ??
-        #     )
-        # =======================================
+        # Extract the artifact from validated data
+        _artifact = serializer.validated_data.pop("_artifact", None)
 
-        # Many artifacts per content, serializer subclasses MultipleArtifactContentSerializer
-        # =======================================
-        # _artifacts = serializer.validated_data.pop("_artifacts")
-        # content = serializer.save()
-        #
-        # if content.pk:
-        #   # _artifacts is a dictionary of {"relative_path": "artifact"}
-        #   for relative_path, artifact in _artifacts.items():
-        #       ContentArtifact.objects.create(
-        #           artifact=artifact,
-        #           content=content,
-        #           relative_path=relative_path
-        #       )
-        # ========================================
+        # Save the content unit
+        content = serializer.save()
 
-        # No artifacts, serializer subclasses NoArtifactContentSerialier
-        # ========================================
-        # content = serializer.save()
-        # ========================================
+        # If the content was created and has an artifact, create the ContentArtifact
+        if content.pk and _artifact:
+            # Build the relative path for the artifact
+            # Format: namespace/name/system/version/module.tar.gz
+            relative_path = f"{content.namespace}/{content.name}/{content.system}/{content.version}/module.tar.gz"
+
+            ContentArtifact.objects.create(
+                artifact=_artifact,
+                content=content,
+                relative_path=relative_path,
+            )
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -110,34 +92,36 @@ class TofuContentViewSet(core.ContentViewSet):
 class TofuRemoteFilter(RemoteFilter):
     """
     A FilterSet for TofuRemote.
+
+    Allows filtering remotes by name and URL.
     """
 
     class Meta:
         model = models.TofuRemote
-        fields = [
-            # ...
-        ]
+        fields = RemoteFilter.Meta.fields
 
 
 class TofuRemoteViewSet(core.RemoteViewSet):
     """
     A ViewSet for TofuRemote.
 
-    Similar to the TofuContentViewSet above, define endpoint_name,
-    queryset and serializer, at a minimum.
+    Provides REST API endpoints for managing OpenTofu module registry remotes.
     """
 
     endpoint_name = "tofu"
     queryset = models.TofuRemote.objects.all()
     serializer_class = serializers.TofuRemoteSerializer
+    filterset_class = TofuRemoteFilter
 
 
 class TofuRepositoryViewSet(core.RepositoryViewSet, ModifyRepositoryActionMixin):
     """
     A ViewSet for TofuRepository.
 
-    Similar to the TofuContentViewSet above, define endpoint_name,
-    queryset and serializer, at a minimum.
+    Provides REST API endpoints for managing OpenTofu module repositories,
+    including sync operations.
+
+    Endpoint: /pulp/api/v3/repositories/tofu/
     """
 
     endpoint_name = "tofu"
@@ -176,8 +160,10 @@ class TofuRepositoryViewSet(core.RepositoryViewSet, ModifyRepositoryActionMixin)
 
 class TofuRepositoryVersionViewSet(core.RepositoryVersionViewSet):
     """
-    A ViewSet for a TofuRepositoryVersion represents a single
-    Tofu repository version.
+    A ViewSet for TofuRepositoryVersion.
+
+    Provides REST API endpoints for viewing OpenTofu repository versions.
+    Each version is an immutable snapshot of repository content.
     """
 
     parent_viewset = TofuRepositoryViewSet
@@ -187,8 +173,10 @@ class TofuPublicationViewSet(core.PublicationViewSet):
     """
     A ViewSet for TofuPublication.
 
-    Similar to the TofuContentViewSet above, define endpoint_name,
-    queryset and serializer, at a minimum.
+    Provides REST API endpoints for creating and managing publications of
+    OpenTofu module repositories.
+
+    Endpoint: /pulp/api/v3/publications/tofu/
     """
 
     endpoint_name = "tofu"
@@ -224,8 +212,10 @@ class TofuDistributionViewSet(core.DistributionViewSet):
     """
     A ViewSet for TofuDistribution.
 
-    Similar to the TofuContentViewSet above, define endpoint_name,
-    queryset and serializer, at a minimum.
+    Provides REST API endpoints for managing distributions that serve
+    OpenTofu modules via the Module Registry Protocol.
+
+    Endpoint: /pulp/api/v3/distributions/tofu/
     """
 
     endpoint_name = "tofu"

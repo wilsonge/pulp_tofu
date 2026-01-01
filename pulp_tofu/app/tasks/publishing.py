@@ -1,15 +1,13 @@
 import logging
-import tempfile
 from gettext import gettext as _
 
 from pulpcore.plugin.models import (
+    ContentArtifact,
     RepositoryVersion,
     PublishedArtifact,
-    PublishedMetadata,
-    RemoteArtifact,
 )
 
-from pulp_tofu.app.models import TofuPublication
+from pulp_tofu.app.models import TofuContent, TofuPublication
 
 
 log = logging.getLogger(__name__)
@@ -18,6 +16,10 @@ log = logging.getLogger(__name__)
 def publish(repository_version_pk):
     """
     Create a Publication based on a RepositoryVersion.
+
+    For OpenTofu modules, we publish all module artifacts that are part of
+    the repository version. The artifacts are served directly by Pulp's
+    content app via the distribution's content handlers.
 
     Args:
         repository_version_pk (str): Create a publication from this repository version.
@@ -30,25 +32,47 @@ def publish(repository_version_pk):
             ver=repository_version.number,
         )
     )
-    with tempfile.TemporaryDirectory("."):
-        with TofuPublication.create(repository_version) as publication:
-            # Write any Artifacts (files) to the file system, and the database.
-            #
-            # artifact = YourArtifactWriter.write(relative_path)
-            # published_artifact = PublishedArtifact(
-            #     relative_path=artifact.relative_path,
-            #     publication=publication,
-            #     content_artifact=artifact)
-            # published_artifact.save()
 
-            # Write any metadata files to the file system, and the database.
-            #
-            # metadata = YourMetadataWriter.write(relative_path)
-            # metadata = PublishedMetadata(
-            #     relative_path=os.path.basename(manifest.relative_path),
-            #     publication=publication,
-            #     file=File(open(manifest.relative_path, "rb")))
-            # metadata.save()
-            pass
+    with TofuPublication.create(repository_version) as publication:
+        # Get all TofuContent in this repository version
+        content_qs = TofuContent.objects.filter(
+            pk__in=repository_version.content.all()
+        )
+
+        log.info(
+            _("Publishing {count} module(s)").format(count=content_qs.count())
+        )
+
+        # For each module, publish its artifact
+        for content in content_qs:
+            # Get the content artifact associated with this module
+            content_artifact = ContentArtifact.objects.filter(content=content).first()
+
+            if content_artifact:
+                # Create a PublishedArtifact to make the artifact available
+                # via the distribution
+                PublishedArtifact.objects.create(
+                    relative_path=content_artifact.relative_path,
+                    publication=publication,
+                    content_artifact=content_artifact,
+                )
+
+                log.debug(
+                    _("Published {namespace}/{name}/{system}@{version}").format(
+                        namespace=content.namespace,
+                        name=content.name,
+                        system=content.system,
+                        version=content.version,
+                    )
+                )
+            else:
+                log.warning(
+                    _("No artifact found for {namespace}/{name}/{system}@{version}").format(
+                        namespace=content.namespace,
+                        name=content.name,
+                        system=content.system,
+                        version=content.version,
+                    )
+                )
 
     log.info(_("Publication: {publication} created").format(publication=publication.pk))

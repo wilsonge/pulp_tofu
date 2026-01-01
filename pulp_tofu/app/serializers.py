@@ -9,38 +9,51 @@ from gettext import gettext as _
 from rest_framework import serializers
 
 from pulpcore.plugin import serializers as platform
+from pulpcore.plugin.serializers import RepositoryVersionRelatedField
 
 from . import models
 
 
-# FIXME: SingleArtifactContentSerializer might not be the right choice for you.
-# If your content type has no artifacts per content unit, use "NoArtifactContentSerializer".
-# If your content type has many artifacts per content unit, use "MultipleArtifactContentSerializer"
-# If you want create content through upload, use "SingleArtifactContentUploadSerializer"
-# If you change this, make sure to do so on "fields" below, also.
-# Make sure your choice here matches up with the create() method of your viewset.
 class TofuContentSerializer(platform.SingleArtifactContentSerializer):
     """
     A Serializer for TofuContent.
 
-    Add serializers for the new fields defined in TofuContent and
-    add those fields to the Meta class keeping fields from the parent class as well.
+    Serializes OpenTofu module content, which consists of a module identified by
+    namespace/name/system and a specific version. Each module has a single artifact
+    (the module archive/source).
+    """
 
-    For example::
-
-    field1 = serializers.TextField()
-    field2 = serializers.IntegerField()
-    field3 = serializers.CharField()
+    namespace = serializers.CharField(
+        help_text=_("The organization or user that owns the module"),
+        required=True,
+    )
+    name = serializers.CharField(
+        help_text=_("The module name"),
+        required=True,
+    )
+    system = serializers.CharField(
+        help_text=_("The target system (e.g., aws, azurerm, gcp)"),
+        required=True,
+    )
+    version = serializers.CharField(
+        help_text=_("Semantic version number (semver 2.0)"),
+        required=True,
+    )
+    download_url = serializers.CharField(
+        help_text=_("The location from which the module version's source can be downloaded"),
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+    )
 
     class Meta:
         fields = platform.SingleArtifactContentSerializer.Meta.fields + (
-            'field1', 'field2', 'field3'
+            "namespace",
+            "name",
+            "system",
+            "version",
+            "download_url",
         )
-        model = models.TofuContent
-    """
-
-    class Meta:
-        fields = platform.SingleArtifactContentSerializer.Meta.fields
         model = models.TofuContent
 
 
@@ -48,29 +61,45 @@ class TofuRemoteSerializer(platform.RemoteSerializer):
     """
     A Serializer for TofuRemote.
 
-    Add any new fields if defined on TofuRemote.
-    Similar to the example above, in TofuContentSerializer.
-    Additional validators can be added to the parent validators list
-
-    For example::
-
-    class Meta:
-        validators = platform.RemoteSerializer.Meta.validators + [myValidator1, myValidator2]
-
-    By default the 'policy' field in platform.RemoteSerializer only validates the choice
-    'immediate'. To add on-demand support for more 'policy' options, e.g. 'streamed' or 'on_demand',
-    re-define the 'policy' option as follows::
-
-    policy = serializers.ChoiceField(
-        help_text="The policy to use when downloading content. The possible values include: "
-                  "'immediate', 'on_demand', and 'streamed'. 'immediate' is the default.",
-        choices=models.Remote.POLICY_CHOICES,
-        default=models.Remote.IMMEDIATE
-    )
+    Serializes a remote source for OpenTofu modules, including support for
+    selective syncing via include/exclude patterns.
     """
 
+    includes = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+        help_text=_(
+            "List of module patterns to include during sync. "
+            "Patterns support wildcards, e.g., 'hashicorp/consul/*', '*/vpc/aws'. "
+            "If empty, all modules are included (unless excluded)."
+        ),
+    )
+    excludes = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        default=list,
+        help_text=_(
+            "List of module patterns to exclude during sync. "
+            "Exclusions are applied after inclusions."
+        ),
+    )
+
+    # Support on-demand download policies for module artifacts
+    policy = serializers.ChoiceField(
+        help_text=_(
+            "The policy to use when downloading content. The possible values include: "
+            "'immediate', 'on_demand', and 'streamed'. 'immediate' is the default."
+        ),
+        choices=models.Remote.POLICY_CHOICES,
+        default=models.Remote.IMMEDIATE,
+    )
+
     class Meta:
-        fields = platform.RemoteSerializer.Meta.fields
+        fields = platform.RemoteSerializer.Meta.fields + (
+            "includes",
+            "excludes",
+        )
         model = models.TofuRemote
 
 
@@ -78,14 +107,7 @@ class TofuRepositorySerializer(platform.RepositorySerializer):
     """
     A Serializer for TofuRepository.
 
-    Add any new fields if defined on TofuRepository.
-    Similar to the example above, in TofuContentSerializer.
-    Additional validators can be added to the parent validators list
-
-    For example::
-
-    class Meta:
-        validators = platform.RepositorySerializer.Meta.validators + [myValidator1, myValidator2]
+    Serializes repositories that contain OpenTofu module content.
     """
 
     class Meta:
@@ -97,14 +119,7 @@ class TofuPublicationSerializer(platform.PublicationSerializer):
     """
     A Serializer for TofuPublication.
 
-    Add any new fields if defined on TofuPublication.
-    Similar to the example above, in TofuContentSerializer.
-    Additional validators can be added to the parent validators list
-
-    For example::
-
-    class Meta:
-        validators = platform.PublicationSerializer.Meta.validators + [myValidator1, myValidator2]
+    Serializes immutable snapshots of a TofuRepository that can be distributed.
     """
 
     class Meta:
@@ -116,15 +131,8 @@ class TofuDistributionSerializer(platform.DistributionSerializer):
     """
     A Serializer for TofuDistribution.
 
-    Add any new fields if defined on TofuDistribution.
-    Similar to the example above, in TofuContentSerializer.
-    Additional validators can be added to the parent validators list
-
-    For example::
-
-    class Meta:
-        validators = platform.DistributionSerializer.Meta.validators + [
-            myValidator1, myValidator2]
+    Serializes distributions that serve TofuPublications via the OpenTofu Module
+    Registry Protocol.
     """
 
     publication = platform.DetailRelatedField(
@@ -135,11 +143,15 @@ class TofuDistributionSerializer(platform.DistributionSerializer):
         allow_null=True,
     )
 
-    # uncomment these lines and remove the publication field if not using publications
-    # repository_version = RepositoryVersionRelatedField(
-    #     required=False, help_text=_("RepositoryVersion to be served"), allow_null=True
-    # )
+    repository_version = RepositoryVersionRelatedField(
+        required=False,
+        help_text=_("RepositoryVersion to be served"),
+        allow_null=True,
+    )
 
     class Meta:
-        fields = platform.DistributionSerializer.Meta.fields + ("publication",)
+        fields = platform.DistributionSerializer.Meta.fields + (
+            "publication",
+            "repository_version",
+        )
         model = models.TofuDistribution

@@ -1,4 +1,5 @@
 """Utilities for tests for the tofu plugin."""
+
 from functools import partial
 import requests
 from unittest import SkipTest

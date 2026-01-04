@@ -39,39 +39,24 @@ class Provider(Content):
     TYPE = "tofu"
 
     # Core provider identification fields
-    namespace = models.TextField(
-        help_text="The organization or user that publishes the provider"
-    )
+    namespace = models.TextField(help_text="The organization or user that publishes the provider")
     type = models.TextField(
         help_text="The provider type (e.g., 'aws', 'azurerm', 'google', 'random')"
     )
-    version = models.TextField(
-        help_text="Semantic version number (semver 2.0)"
-    )
+    version = models.TextField(help_text="Semantic version number (semver 2.0)")
 
     # Platform-specific fields
-    os = models.TextField(
-        help_text="Operating system (e.g., 'linux', 'darwin', 'windows')"
-    )
-    arch = models.TextField(
-        help_text="CPU architecture (e.g., 'amd64', 'arm', 'arm64')"
-    )
+    os = models.TextField(help_text="Operating system (e.g., 'linux', 'darwin', 'windows')")
+    arch = models.TextField(help_text="CPU architecture (e.g., 'amd64', 'arm', 'arm64')")
 
     # Provider package metadata
-    filename = models.TextField(
-        help_text="The filename for this provider's zip archive"
-    )
-    shasum = models.TextField(
-        help_text="SHA256 checksum for the provider package"
-    )
+    filename = models.TextField(help_text="The filename for this provider's zip archive")
+    shasum = models.TextField(help_text="SHA256 checksum for the provider package")
     protocols = models.JSONField(
-        default=list,
-        help_text="Supported OpenTofu provider API versions (e.g., ['4.0', '5.1'])"
+        default=list, help_text="Supported OpenTofu provider API versions (e.g., ['4.0', '5.1'])"
     )
     download_url = models.TextField(
-        null=True,
-        blank=True,
-        help_text="The URL from which the provider package can be downloaded"
+        null=True, blank=True, help_text="The URL from which the provider package can be downloaded"
     )
 
     class Meta:
@@ -147,6 +132,7 @@ class TofuDistribution(Distribution):
             The content handler function
         """
         from pulp_tofu.app.content import tofu_content_handler
+
         return tofu_content_handler
 
     class Meta:

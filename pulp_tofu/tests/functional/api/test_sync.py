@@ -1,4 +1,5 @@
 """Tests that sync tofu plugin repositories."""
+
 import unittest
 
 from pulp_smash import config

@@ -1,4 +1,5 @@
 """Tests that CRUD tofu remotes."""
+
 from random import choice
 import unittest
 

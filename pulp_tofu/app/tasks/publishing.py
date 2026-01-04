@@ -35,13 +35,9 @@ def publish(repository_version_pk):
 
     with TofuPublication.create(repository_version) as publication:
         # Get all Providers in this repository version
-        content_qs = Provider.objects.filter(
-            pk__in=repository_version.content.all()
-        )
+        content_qs = Provider.objects.filter(pk__in=repository_version.content.all())
 
-        log.info(
-            _("Publishing {count} provider(s)").format(count=content_qs.count())
-        )
+        log.info(_("Publishing {count} provider(s)").format(count=content_qs.count()))
 
         # For each provider, publish its artifact
         for content in content_qs:

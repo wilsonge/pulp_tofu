@@ -89,8 +89,10 @@ class TofuFirstStage(Stage):
         # 3. Use a separate module list file or configuration
 
         log.warning(
-            _("Module discovery not yet implemented. "
-              "Please add modules manually using the content API.")
+            _(
+                "Module discovery not yet implemented. "
+                "Please add modules manually using the content API."
+            )
         )
 
         # For now, sync will complete successfully but won't add any content
@@ -110,7 +112,9 @@ class TofuFirstStage(Stage):
         url = self.remote.url
 
         # If the URL ends with .well-known/terraform.json, fetch service discovery
-        if url.endswith("/.well-known/terraform.json") or url.endswith(".well-known/terraform.json"):
+        if url.endswith("/.well-known/terraform.json") or url.endswith(
+            ".well-known/terraform.json"
+        ):
             downloader = self.remote.get_downloader(url=url)
             result = await downloader.run()
 

@@ -74,11 +74,7 @@ class ProviderViewSet(core.ContentViewSet):
         serializer.save()
 
         headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data,
-            status=status.HTTP_201_CREATED,
-            headers=headers
-        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @extend_schema(
         description="List all providers for a given namespace and type",
@@ -161,11 +157,7 @@ class ProviderViewSet(core.ContentViewSet):
 
         Returns all platform variants (os/arch combinations) for the given provider version.
         """
-        queryset = self.get_queryset().filter(
-            namespace=namespace,
-            type=type,
-            version=version
-        )
+        queryset = self.get_queryset().filter(namespace=namespace, type=type, version=version)
         queryset = self.filter_queryset(queryset)
 
         page = self.paginate_queryset(queryset)
@@ -227,12 +219,7 @@ class ProviderViewSet(core.ContentViewSet):
         This uniquely identifies a single provider package.
         """
         provider = get_object_or_404(
-            self.get_queryset(),
-            namespace=namespace,
-            type=type,
-            version=version,
-            os=os,
-            arch=arch
+            self.get_queryset(), namespace=namespace, type=type, version=version, os=os, arch=arch
         )
         serializer = self.get_serializer(provider)
         return Response(serializer.data)

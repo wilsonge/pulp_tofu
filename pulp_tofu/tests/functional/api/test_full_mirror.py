@@ -50,10 +50,10 @@ class RegistryMirrorTestCase(unittest.TestCase):
         cls.cfg = config.get_config()
         cls.client = gen_tofu_client()
         configuration = Configuration()
-        configuration.username = 'admin'
-        configuration.password = 'password'
-        configuration.host = 'http://{}:24817'.format(socket.gethostname())
-        configuration.safe_chars_for_path_param = '/'
+        configuration.username = "admin"
+        configuration.password = "password"
+        configuration.host = "http://{}:24817".format(socket.gethostname())
+        configuration.safe_chars_for_path_param = "/"
         cls.core_client = CoreApiClient(configuration)
 
     def test_on_demand_pypi_full_sync(self):

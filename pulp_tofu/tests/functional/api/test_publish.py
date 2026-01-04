@@ -1,4 +1,5 @@
 """Tests that publish tofu plugin repositories."""
+
 import unittest
 from random import choice
 

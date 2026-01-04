@@ -7,7 +7,7 @@ from pulpcore.plugin.models import (
     PublishedArtifact,
 )
 
-from pulp_tofu.app.models import TofuContent, TofuPublication
+from pulp_tofu.app.models import Provider, TofuPublication
 
 
 log = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ def publish(repository_version_pk):
     """
     Create a Publication based on a RepositoryVersion.
 
-    For OpenTofu modules, we publish all module artifacts that are part of
+    For OpenTofu providers, we publish all provider artifacts that are part of
     the repository version. The artifacts are served directly by Pulp's
     content app via the distribution's content handlers.
 
@@ -34,18 +34,18 @@ def publish(repository_version_pk):
     )
 
     with TofuPublication.create(repository_version) as publication:
-        # Get all TofuContent in this repository version
-        content_qs = TofuContent.objects.filter(
+        # Get all Providers in this repository version
+        content_qs = Provider.objects.filter(
             pk__in=repository_version.content.all()
         )
 
         log.info(
-            _("Publishing {count} module(s)").format(count=content_qs.count())
+            _("Publishing {count} provider(s)").format(count=content_qs.count())
         )
 
-        # For each module, publish its artifact
+        # For each provider, publish its artifact
         for content in content_qs:
-            # Get the content artifact associated with this module
+            # Get the content artifact associated with this provider
             content_artifact = ContentArtifact.objects.filter(content=content).first()
 
             if content_artifact:
@@ -58,20 +58,22 @@ def publish(repository_version_pk):
                 )
 
                 log.debug(
-                    _("Published {namespace}/{name}/{system}@{version}").format(
+                    _("Published {namespace}/{type}@{version} for {os}/{arch}").format(
                         namespace=content.namespace,
-                        name=content.name,
-                        system=content.system,
+                        type=content.type,
                         version=content.version,
+                        os=content.os,
+                        arch=content.arch,
                     )
                 )
             else:
                 log.warning(
-                    _("No artifact found for {namespace}/{name}/{system}@{version}").format(
+                    _("No artifact found for {namespace}/{type}@{version} {os}/{arch}").format(
                         namespace=content.namespace,
-                        name=content.name,
-                        system=content.system,
+                        type=content.type,
                         version=content.version,
+                        os=content.os,
+                        arch=content.arch,
                     )
                 )
 

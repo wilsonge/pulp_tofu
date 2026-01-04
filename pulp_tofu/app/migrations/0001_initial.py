@@ -41,9 +41,9 @@ class Migration(migrations.Migration):
             bases=('core.repository',),
         ),
         migrations.CreateModel(
-            name='TofuContent',
+            name='Provider',
             fields=[
-                ('content_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, related_name='tofu_tofucontent', serialize=False, to='core.Content')),
+                ('content_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, related_name='tofu_provider', serialize=False, to='core.Content')),
                 ('version', models.TextField()),
             ],
             options={

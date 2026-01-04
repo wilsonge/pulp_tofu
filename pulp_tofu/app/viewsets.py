@@ -6,7 +6,8 @@ Check `Plugin Writer's Guide`_ for more details.
 """
 
 from django.db import transaction
-from drf_spectacular.utils import extend_schema
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -24,69 +25,217 @@ from pulpcore.plugin.models import ContentArtifact
 from . import models, serializers, tasks
 
 
-class TofuContentFilter(core.ContentFilter):
+class ProviderFilter(core.ContentFilter):
     """
-    FilterSet for TofuContent.
+    FilterSet for Provider.
 
-    Allows filtering modules by namespace, name, system, and version.
+    Allows filtering providers by namespace, type, version, os, and arch.
     """
 
     class Meta:
-        model = models.TofuContent
+        model = models.Provider
         fields = [
             "namespace",
-            "name",
-            "system",
+            "type",
             "version",
+            "os",
+            "arch",
         ]
 
 
-class TofuContentViewSet(core.ContentViewSet):
+class ProviderViewSet(core.ContentViewSet):
     """
-    A ViewSet for TofuContent.
+    A ViewSet for Provider.
 
-    Provides REST API endpoints for managing OpenTofu module content units.
+    Provides REST API endpoints for managing OpenTofu provider content units.
 
-    Endpoint: /pulp/api/v3/content/tofu/units/
+    Endpoint: /pulp/api/v3/providers/tofu/units/
     """
 
-    endpoint_name = "tofu"
-    queryset = models.TofuContent.objects.all()
-    serializer_class = serializers.TofuContentSerializer
-    filterset_class = TofuContentFilter
+    endpoint_name = "providers"
+    queryset = models.Provider.objects.all()
+    serializer_class = serializers.ProviderSerializer
+    filterset_class = ProviderFilter
 
     @transaction.atomic
     def create(self, request):
         """
-        Create a TofuContent unit with its associated artifact.
+        Create a Provider unit with its associated artifact.
 
-        Each OpenTofu module has a single artifact (the module archive/source).
-        The artifact is associated with a relative path based on the module's
-        namespace, name, system, and version.
+        Each OpenTofu provider has a single artifact (the provider zip archive).
+        The artifact is associated with a relative path based on the provider's
+        namespace, type, version, os, and arch.
+
+        The relative_path is automatically generated as:
+        {namespace}/{type}/{version}/{os}_{arch}/{filename}
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
-        # Extract the artifact from validated data
-        _artifact = serializer.validated_data.pop("_artifact", None)
-
-        # Save the content unit
-        content = serializer.save()
-
-        # If the content was created and has an artifact, create the ContentArtifact
-        if content.pk and _artifact:
-            # Build the relative path for the artifact
-            # Format: namespace/name/system/version/module.tar.gz
-            relative_path = f"{content.namespace}/{content.name}/{content.system}/{content.version}/module.tar.gz"
-
-            ContentArtifact.objects.create(
-                artifact=_artifact,
-                content=content,
-                relative_path=relative_path,
-            )
+        serializer.save()
 
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+
+    @extend_schema(
+        description="List all providers for a given namespace and type",
+        summary="List providers by namespace/type",
+        parameters=[
+            OpenApiParameter(
+                name="namespace",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Provider namespace (e.g., 'hashicorp')",
+            ),
+            OpenApiParameter(
+                name="type",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Provider type (e.g., 'aws', 'random')",
+            ),
+        ],
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path=r"(?P<namespace>[^/]+)/(?P<type>[^/]+)",
+        url_name="by-namespace-type",
+    )
+    def by_namespace_type(self, request, namespace=None, type=None):
+        """
+        List all providers matching the given namespace and type.
+
+        URL: /pulp/api/v3/content/tofu/providers/:namespace/:type/
+
+        This provides a more RESTful alternative to using query parameters.
+        """
+        queryset = self.get_queryset().filter(namespace=namespace, type=type)
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        description="Get a specific provider by namespace, type, and version",
+        summary="Get provider by namespace/type/version",
+        parameters=[
+            OpenApiParameter(
+                name="namespace",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Provider namespace",
+            ),
+            OpenApiParameter(
+                name="type",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Provider type",
+            ),
+            OpenApiParameter(
+                name="version",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Provider version (e.g., '2.0.0')",
+            ),
+        ],
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path=r"(?P<namespace>[^/]+)/(?P<type>[^/]+)/(?P<version>[^/]+)",
+        url_name="by-namespace-type-version",
+    )
+    def by_namespace_type_version(self, request, namespace=None, type=None, version=None):
+        """
+        List all providers (different platforms) for a specific namespace/type/version.
+
+        URL: /pulp/api/v3/content/tofu/providers/:namespace/:type/:version/
+
+        Returns all platform variants (os/arch combinations) for the given provider version.
+        """
+        queryset = self.get_queryset().filter(
+            namespace=namespace,
+            type=type,
+            version=version
+        )
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        description="Get a specific provider package by namespace, type, version, os, and arch",
+        summary="Get provider package",
+        parameters=[
+            OpenApiParameter(
+                name="namespace",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Provider namespace",
+            ),
+            OpenApiParameter(
+                name="type",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Provider type",
+            ),
+            OpenApiParameter(
+                name="version",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Provider version",
+            ),
+            OpenApiParameter(
+                name="os",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="Operating system (e.g., 'linux', 'darwin')",
+            ),
+            OpenApiParameter(
+                name="arch",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="CPU architecture (e.g., 'amd64', 'arm64')",
+            ),
+        ],
+    )
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path=r"(?P<namespace>[^/]+)/(?P<type>[^/]+)/(?P<version>[^/]+)/(?P<os>[^/]+)/(?P<arch>[^/]+)",
+        url_name="by-full-path",
+    )
+    def by_full_path(self, request, namespace=None, type=None, version=None, os=None, arch=None):
+        """
+        Get a specific provider package by its full identifier.
+
+        URL: /pulp/api/v3/content/tofu/providers/:namespace/:type/:version/:os/:arch/
+
+        This uniquely identifies a single provider package.
+        """
+        provider = get_object_or_404(
+            self.get_queryset(),
+            namespace=namespace,
+            type=type,
+            version=version,
+            os=os,
+            arch=arch
+        )
+        serializer = self.get_serializer(provider)
+        return Response(serializer.data)
 
 
 class TofuRemoteFilter(RemoteFilter):
@@ -105,7 +254,7 @@ class TofuRemoteViewSet(core.RemoteViewSet):
     """
     A ViewSet for TofuRemote.
 
-    Provides REST API endpoints for managing OpenTofu module registry remotes.
+    Provides REST API endpoints for managing OpenTofu provider registry remotes.
     """
 
     endpoint_name = "tofu"
@@ -118,7 +267,7 @@ class TofuRepositoryViewSet(core.RepositoryViewSet, ModifyRepositoryActionMixin)
     """
     A ViewSet for TofuRepository.
 
-    Provides REST API endpoints for managing OpenTofu module repositories,
+    Provides REST API endpoints for managing OpenTofu provider repositories,
     including sync operations.
 
     Endpoint: /pulp/api/v3/repositories/tofu/
@@ -174,7 +323,7 @@ class TofuPublicationViewSet(core.PublicationViewSet):
     A ViewSet for TofuPublication.
 
     Provides REST API endpoints for creating and managing publications of
-    OpenTofu module repositories.
+    OpenTofu provider repositories.
 
     Endpoint: /pulp/api/v3/publications/tofu/
     """
@@ -213,7 +362,7 @@ class TofuDistributionViewSet(core.DistributionViewSet):
     A ViewSet for TofuDistribution.
 
     Provides REST API endpoints for managing distributions that serve
-    OpenTofu modules via the Module Registry Protocol.
+    OpenTofu providers via the Provider Registry Protocol.
 
     Endpoint: /pulp/api/v3/distributions/tofu/
     """

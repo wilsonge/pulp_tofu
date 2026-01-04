@@ -14,78 +14,99 @@ from pulpcore.plugin.serializers import RepositoryVersionRelatedField
 from . import models
 
 
-class TofuContentSerializer(platform.SingleArtifactContentSerializer):
+class ProviderSerializer(platform.SingleArtifactContentSerializer):
     """
-    A Serializer for TofuContent.
+    A Serializer for Provider.
 
-    Serializes OpenTofu module content, which consists of a module identified by
-    namespace/name/system and a specific version. Each module has a single artifact
-    (the module archive/source).
+    Serializes OpenTofu provider content, which consists of a provider identified by
+    namespace/type and a specific version for a platform (os/arch). Each provider
+    has a single artifact (the provider zip archive).
     """
 
     namespace = serializers.CharField(
-        help_text=_("The organization or user that owns the module"),
+        help_text=_("The organization or user that publishes the provider"),
         required=True,
     )
-    name = serializers.CharField(
-        help_text=_("The module name"),
-        required=True,
-    )
-    system = serializers.CharField(
-        help_text=_("The target system (e.g., aws, azurerm, gcp)"),
+    type = serializers.CharField(
+        help_text=_("The provider type (e.g., 'aws', 'azurerm', 'google', 'random')"),
         required=True,
     )
     version = serializers.CharField(
         help_text=_("Semantic version number (semver 2.0)"),
         required=True,
     )
+    os = serializers.CharField(
+        help_text=_("Operating system (e.g., 'linux', 'darwin', 'windows')"),
+        required=True,
+    )
+    arch = serializers.CharField(
+        help_text=_("CPU architecture (e.g., 'amd64', 'arm', 'arm64')"),
+        required=True,
+    )
+    filename = serializers.CharField(
+        help_text=_("The filename for this provider's zip archive"),
+        required=True,
+    )
+    shasum = serializers.CharField(
+        help_text=_("SHA256 checksum for the provider package"),
+        required=True,
+    )
+    protocols = serializers.JSONField(
+        help_text=_("Supported OpenTofu provider API versions (e.g., ['4.0', '5.1'])"),
+        required=True,
+    )
     download_url = serializers.CharField(
-        help_text=_("The location from which the module version's source can be downloaded"),
+        help_text=_("The URL from which the provider package can be downloaded"),
         required=False,
         allow_blank=True,
         allow_null=True,
     )
 
+    def deferred_validate(self, data):
+        """
+        Validate and set the relative_path for the provider content.
+
+        The relative_path is constructed from the provider's identifying fields
+        to create a unique storage path: {namespace}/{type}/{version}/{os}_{arch}/{filename}
+        """
+        data = super().deferred_validate(data)
+
+        # Construct the relative_path from the provider's identifying fields
+        namespace = data.get("namespace")
+        provider_type = data.get("type")
+        version = data.get("version")
+        os = data.get("os")
+        arch = data.get("arch")
+        filename = data.get("filename")
+
+        # Set the relative_path for the artifact
+        data["relative_path"] = f"{namespace}/{provider_type}/{version}/{os}_{arch}/{filename}"
+
+        return data
+
     class Meta:
         fields = platform.SingleArtifactContentSerializer.Meta.fields + (
             "namespace",
-            "name",
-            "system",
+            "type",
             "version",
+            "os",
+            "arch",
+            "filename",
+            "shasum",
+            "protocols",
             "download_url",
         )
-        model = models.TofuContent
+        model = models.Provider
 
 
 class TofuRemoteSerializer(platform.RemoteSerializer):
     """
     A Serializer for TofuRemote.
 
-    Serializes a remote source for OpenTofu modules, including support for
-    selective syncing via include/exclude patterns.
+    Serializes a remote source for OpenTofu providers.
     """
 
-    includes = serializers.ListField(
-        child=serializers.CharField(),
-        required=False,
-        default=list,
-        help_text=_(
-            "List of module patterns to include during sync. "
-            "Patterns support wildcards, e.g., 'hashicorp/consul/*', '*/vpc/aws'. "
-            "If empty, all modules are included (unless excluded)."
-        ),
-    )
-    excludes = serializers.ListField(
-        child=serializers.CharField(),
-        required=False,
-        default=list,
-        help_text=_(
-            "List of module patterns to exclude during sync. "
-            "Exclusions are applied after inclusions."
-        ),
-    )
-
-    # Support on-demand download policies for module artifacts
+    # Support on-demand download policies for provider artifacts
     policy = serializers.ChoiceField(
         help_text=_(
             "The policy to use when downloading content. The possible values include: "
@@ -96,10 +117,7 @@ class TofuRemoteSerializer(platform.RemoteSerializer):
     )
 
     class Meta:
-        fields = platform.RemoteSerializer.Meta.fields + (
-            "includes",
-            "excludes",
-        )
+        fields = platform.RemoteSerializer.Meta.fields
         model = models.TofuRemote
 
 
@@ -107,7 +125,7 @@ class TofuRepositorySerializer(platform.RepositorySerializer):
     """
     A Serializer for TofuRepository.
 
-    Serializes repositories that contain OpenTofu module content.
+    Serializes repositories that contain OpenTofu provider content.
     """
 
     class Meta:
@@ -131,7 +149,7 @@ class TofuDistributionSerializer(platform.DistributionSerializer):
     """
     A Serializer for TofuDistribution.
 
-    Serializes distributions that serve TofuPublications via the OpenTofu Module
+    Serializes distributions that serve TofuPublications via the OpenTofu Provider
     Registry Protocol.
     """
 

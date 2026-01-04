@@ -21,52 +21,67 @@ from pulpcore.plugin.models import (
 logger = getLogger(__name__)
 
 
-class TofuContent(Content):
+class Provider(Content):
     """
-    The "tofu" content type representing an OpenTofu module.
+    The "tofu" content type representing an OpenTofu provider package.
 
-    Based on the OpenTofu Module Registry Protocol, each module is uniquely
-    identified by the combination of namespace, name, system, and version.
+    Based on the OpenTofu Provider Registry Protocol, each provider package is uniquely
+    identified by the combination of namespace, type, version, os, and arch.
 
-    Module addresses follow the format: hostname/namespace/name/system
+    Provider addresses follow the format: hostname/namespace/type
     where:
-    - namespace: The organization or user that owns the module
-    - name: The module name (the abstraction being created)
-    - system: The target system (e.g., aws, azurerm, gcp)
-    - version: Semantic version number (semver 2.0)
+    - namespace: The organization or user that publishes the provider (e.g., "hashicorp")
+    - type: The provider type (e.g., "aws", "azurerm", "google", "random")
+
+    Each provider version can have multiple packages for different platforms (os/arch combinations).
     """
 
     TYPE = "tofu"
 
-    # Core module identification fields
+    # Core provider identification fields
     namespace = models.TextField(
-        help_text="The organization or user that owns the module"
+        help_text="The organization or user that publishes the provider"
     )
-    name = models.TextField(
-        help_text="The module name"
-    )
-    system = models.TextField(
-        help_text="The target system (e.g., aws, azurerm, gcp)"
+    type = models.TextField(
+        help_text="The provider type (e.g., 'aws', 'azurerm', 'google', 'random')"
     )
     version = models.TextField(
         help_text="Semantic version number (semver 2.0)"
     )
 
-    # Download location for the module source
+    # Platform-specific fields
+    os = models.TextField(
+        help_text="Operating system (e.g., 'linux', 'darwin', 'windows')"
+    )
+    arch = models.TextField(
+        help_text="CPU architecture (e.g., 'amd64', 'arm', 'arm64')"
+    )
+
+    # Provider package metadata
+    filename = models.TextField(
+        help_text="The filename for this provider's zip archive"
+    )
+    shasum = models.TextField(
+        help_text="SHA256 checksum for the provider package"
+    )
+    protocols = models.JSONField(
+        default=list,
+        help_text="Supported OpenTofu provider API versions (e.g., ['4.0', '5.1'])"
+    )
     download_url = models.TextField(
         null=True,
         blank=True,
-        help_text="The location from which the module version's source can be downloaded"
+        help_text="The URL from which the provider package can be downloaded"
     )
 
     class Meta:
         default_related_name = "%(app_label)s_%(model_name)s"
-        unique_together = ("namespace", "name", "system", "version")
+        unique_together = ("namespace", "type", "version", "os", "arch")
 
 
 class TofuPublication(Publication):
     """
-    A Publication for TofuContent.
+    A Publication for Provider.
 
     Define any additional fields for your new publication if needed.
     """
@@ -79,25 +94,15 @@ class TofuPublication(Publication):
 
 class TofuRemote(Remote):
     """
-    A Remote for TofuContent.
+    A Remote for Provider.
 
-    Connects to an OpenTofu module registry to sync modules.
-    The URL should point to the base URL of the module registry API
+    Connects to an OpenTofu provider registry to sync provider packages.
+    The URL should point to the base URL of the provider registry API
     (typically discovered via the service discovery protocol at /.well-known/terraform.json).
     """
 
     TYPE = "tofu"
     DEFAULT_DOWNLOAD_CONCURRENCY = 10
-
-    # Include/exclude patterns for selective syncing
-    includes = models.JSONField(
-        default=list,
-        help_text="List of module patterns to include (e.g., ['hashicorp/consul/*', '*/vpc/aws'])"
-    )
-    excludes = models.JSONField(
-        default=list,
-        help_text="List of module patterns to exclude"
-    )
 
     class Meta:
         default_related_name = "%(app_label)s_%(model_name)s"
@@ -105,14 +110,14 @@ class TofuRemote(Remote):
 
 class TofuRepository(Repository):
     """
-    A Repository for TofuContent.
+    A Repository for Provider.
 
     Define any additional fields for your new repository if needed.
     """
 
     TYPE = "tofu"
 
-    CONTENT_TYPES = [TofuContent]
+    CONTENT_TYPES = [Provider]
 
     class Meta:
         default_related_name = "%(app_label)s_%(model_name)s"
@@ -120,12 +125,29 @@ class TofuRepository(Repository):
 
 class TofuDistribution(Distribution):
     """
-    A Distribution for TofuContent.
+    A Distribution for Provider.
 
-    Define any additional fields for your new distribution if needed.
+    Serves OpenTofu providers using the Provider Registry Protocol.
+    The content handler routes requests to the appropriate endpoints:
+    - /.well-known/terraform.json (service discovery)
+    - /:namespace/:type/versions (list versions)
+    - /:namespace/:type/:version/download/:os/:arch (download package)
     """
 
     TYPE = "tofu"
+
+    def content_handler(self, path):
+        """
+        Route content requests to the OpenTofu provider registry protocol handler.
+
+        Args:
+            path: The path portion of the URL
+
+        Returns:
+            The content handler function
+        """
+        from pulp_tofu.app.content import tofu_content_handler
+        return tofu_content_handler
 
     class Meta:
         default_related_name = "%(app_label)s_%(model_name)s"

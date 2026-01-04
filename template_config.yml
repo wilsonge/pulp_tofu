@@ -23,7 +23,7 @@ docker_fixtures: false
 extra_files: []
 flake8: true
 flake8_ignore: []
-github_org: pulp
+github_org: wilsonge
 latest_release_branch: null
 lint_requirements: true
 os_required_packages: []

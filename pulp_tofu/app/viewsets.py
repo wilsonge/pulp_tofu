@@ -20,7 +20,6 @@ from pulpcore.plugin.serializers import (
     RepositorySyncURLSerializer,
 )
 from pulpcore.plugin.tasking import dispatch
-from pulpcore.plugin.models import ContentArtifact
 
 from . import models, serializers, tasks
 
@@ -207,7 +206,10 @@ class ProviderViewSet(core.ContentViewSet):
     @action(
         detail=False,
         methods=["get"],
-        url_path=r"(?P<namespace>[^/]+)/(?P<type>[^/]+)/(?P<version>[^/]+)/(?P<os>[^/]+)/(?P<arch>[^/]+)",
+        url_path=(
+            r"(?P<namespace>[^/]+)/(?P<type>[^/]+)/(?P<version>[^/]+)/"
+            r"(?P<os>[^/]+)/(?P<arch>[^/]+)"
+        ),
         url_name="by-full-path",
     )
     def by_full_path(self, request, namespace=None, type=None, version=None, os=None, arch=None):

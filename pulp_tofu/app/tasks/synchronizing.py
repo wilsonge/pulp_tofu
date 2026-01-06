@@ -3,15 +3,13 @@ import json
 import logging
 from urllib.parse import urljoin, urlparse
 
-from pulpcore.plugin.models import Artifact, ContentArtifact, ProgressReport, Remote, Repository
+from pulpcore.plugin.models import Remote, Repository
 from pulpcore.plugin.stages import (
-    DeclarativeArtifact,
-    DeclarativeContent,
     DeclarativeVersion,
     Stage,
 )
 
-from pulp_tofu.app.models import Provider, TofuRemote
+from pulp_tofu.app.models import TofuRemote
 
 
 log = logging.getLogger(__name__)
@@ -79,7 +77,7 @@ class TofuFirstStage(Stage):
         specific modules requested by users.
         """
         # Discover the registry API base URL
-        registry_base_url = await self._discover_registry_endpoint()
+        await self._discover_registry_endpoint()
 
         # TODO: Implement module discovery mechanism
         # The OpenTofu registry doesn't have a standard API to list all modules.

@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TofuPublication',
             fields=[
-                ('publication_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, related_name='tofu_tofupublication', serialize=False, to='core.Publication')),
+                ('publication_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='core.Publication')),
             ],
             options={
                 'default_related_name': '%(app_label)s_%(model_name)s',
@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TofuRemote',
             fields=[
-                ('remote_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, related_name='tofu_tofuremote', serialize=False, to='core.Remote')),
+                ('remote_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='core.Remote')),
             ],
             options={
                 'default_related_name': '%(app_label)s_%(model_name)s',
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TofuRepository',
             fields=[
-                ('repository_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, related_name='tofu_tofurepository', serialize=False, to='core.Repository')),
+                ('repository_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='core.Repository')),
             ],
             options={
                 'default_related_name': '%(app_label)s_%(model_name)s',
@@ -46,7 +46,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Provider',
             fields=[
-                ('content_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, related_name='tofu_provider', serialize=False, to='core.Content')),
+                ('content_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='core.Content')),
                 ('namespace', models.TextField(help_text='The organization or user that publishes the provider')),
                 ('type', models.TextField(help_text="The provider type (e.g., 'aws', 'azurerm', 'google', 'random')")),
                 ('version', models.TextField(help_text='Semantic version number (semver 2.0)')),

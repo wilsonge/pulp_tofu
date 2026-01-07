@@ -5,6 +5,34 @@ requires = [
 ]
 build-backend = 'setuptools.build_meta'
 
+[project]
+name = "pulp-tofu"
+version = "0.0.1-alpha"
+description = "pulp-tofu plugin for the Pulp Project"
+readme = "README.md"
+authors = [
+    {name="George Wilson"}
+]
+classifiers=[
+    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+    "Operating System :: POSIX :: Linux",
+    "Framework :: Django",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires_python = ">=3.11"
+dependencies = [
+    "pulpcore>=3.85.0,<3.100"
+]
+
+[project.entry-points."pulpcore.plugin"]
+pulp_tofu = "pulp_tofu:default_app_config"
+
+[project.entry-points."pytest11"]
+pulp_tofu = "pulp_tofu.pytest_plugin"
+
 [tool.towncrier]
 package = "pulp-tofu"
 filename = "CHANGES.rst"
@@ -86,7 +114,7 @@ ignore = [
 [tool.bumpversion]
 # This section is managed by the plugin template. Do not edit manually.
 
-current_version = "0.1.0a1.dev"
+current_version = "0.0.1-alpha"
 commit = false
 tag = false
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<alpha>0a)?(?P<patch>\\d+)(\\.(?P<release>[a-z]+))?"
@@ -126,4 +154,8 @@ search = "version = \"{current_version}\""
 replace = "version = \"{new_version}\""
 
 [[tool.bumpversion.files]]
-filename = "./setup.py"
+# This section is managed by the plugin template. Do not edit manually.
+
+filename = "./pyproject.toml"
+search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""

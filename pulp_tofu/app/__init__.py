@@ -6,5 +6,5 @@ class PulpTofuPluginAppConfig(PulpPluginAppConfig):
 
     name = "pulp_tofu.app"
     label = "tofu"
-    version = "0.1.0a1.dev"
+    version = "0.0.1.dev"
     python_package_name = "pulp_tofu"

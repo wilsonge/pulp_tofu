@@ -22,8 +22,6 @@ class Migration(migrations.Migration):
             name='TofuRemote',
             fields=[
                 ('remote_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, related_name='tofu_tofuremote', serialize=False, to='core.Remote')),
-                ('includes', models.JSONField(default=list)),
-                ('excludes', models.JSONField(default=list)),
             ],
             options={
                 'default_related_name': '%(app_label)s_%(model_name)s',
@@ -44,11 +42,19 @@ class Migration(migrations.Migration):
             name='Provider',
             fields=[
                 ('content_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, related_name='tofu_provider', serialize=False, to='core.Content')),
-                ('version', models.TextField()),
+                ('namespace', models.TextField(help_text='The organization or user that publishes the provider')),
+                ('type', models.TextField(help_text="The provider type (e.g., 'aws', 'azurerm', 'google', 'random')")),
+                ('version', models.TextField(help_text='Semantic version number (semver 2.0)')),
+                ('os', models.TextField(help_text="Operating system (e.g., 'linux', 'darwin', 'windows')")),
+                ('arch', models.TextField(help_text="CPU architecture (e.g., 'amd64', 'arm', 'arm64')")),
+                ('filename', models.TextField(help_text="The filename for this provider's zip archive")),
+                ('shasum', models.TextField(help_text='SHA256 checksum for the provider package')),
+                ('protocols', models.JSONField(default=list, help_text="Supported OpenTofu provider API versions (e.g., ['4.0', '5.1'])")),
+                ('download_url', models.TextField(blank=True, null=True, help_text='The URL from which the provider package can be downloaded')),
             ],
             options={
                 'default_related_name': '%(app_label)s_%(model_name)s',
-                'unique_together': {},
+                'unique_together': {('namespace', 'type', 'version', 'os', 'arch')},
             },
             bases=('core.content',),
         ),

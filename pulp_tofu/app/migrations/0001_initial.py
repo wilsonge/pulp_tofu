@@ -7,6 +7,11 @@ class Migration(migrations.Migration):
 
     initial = True
 
+    dependencies = [
+        ('core', '0091_systemid'),
+        ('core', '0106_alter_artifactdistribution_distribution_ptr_and_more')
+    ]
+
     operations = [
         migrations.CreateModel(
             name='TofuPublication',

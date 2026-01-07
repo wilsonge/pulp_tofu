@@ -1,8 +1,8 @@
 import unittest
 from django.test import TestCase
 
-from pulp_tofu.app.serializers import TofuContentSerializer
-from pulp_tofu.app.models import TofuContent
+from pulp_tofu.app.serializers import ProviderSerializer
+from pulp_tofu.app.models import Provider
 
 from pulpcore.plugin.models import Artifact
 
@@ -11,7 +11,7 @@ from pulpcore.plugin.models import Artifact
 # Provide sufficient parameters to create the TofuContent object
 # Depending on the base class of the serializer, provide either "_artifact" or "_artifacts"
 @unittest.skip("FIXME: plugin writer action required")
-class TestTofuContentSerializer(TestCase):
+class TestProviderSerializerSerializer(TestCase):
     """Test TofuContentSerializer."""
 
     def setUp(self):
@@ -27,14 +27,14 @@ class TestTofuContentSerializer(TestCase):
         )
 
     def test_valid_data(self):
-        """Test that the TofuContentSerializer accepts valid data."""
+        """Test that the ProviderSerializer accepts valid data."""
         data = {"_artifact": "/pulp/api/v3/artifacts/{}/".format(self.artifact.pk)}
-        serializer = TofuContentSerializer(data=data)
+        serializer = ProviderSerializer(data=data)
         self.assertTrue(serializer.is_valid())
 
     def test_duplicate_data(self):
-        """Test that the TofuContentSerializer does not accept data."""
-        TofuContent.objects.create(artifact=self.artifact)
+        """Test that the ProviderSerializer does not accept data."""
+        Provider.objects.create(artifact=self.artifact)
         data = {"_artifact": "/pulp/api/v3/artifacts/{}/".format(self.artifact.pk)}
-        serializer = TofuContentSerializer(data=data)
+        serializer = ProviderSerializer(data=data)
         self.assertFalse(serializer.is_valid())

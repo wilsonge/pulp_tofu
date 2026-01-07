@@ -71,6 +71,6 @@ class Migration(migrations.Migration):
             options={
                 'default_related_name': '%(app_label)s_%(model_name)s',
             },
-            bases=('core.basedistribution',),
+            bases=('core.distribution',),
         ),
     ]

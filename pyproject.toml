@@ -13,8 +13,8 @@ readme = "README.md"
 authors = [
     {name="George Wilson"}
 ]
+license = "GPL-2.0-or-later"
 classifiers=[
-    "License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
     "Operating System :: POSIX :: Linux",
     "Framework :: Django",
     "Programming Language :: Python",
@@ -22,7 +22,7 @@ classifiers=[
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-requires_python = ">=3.11"
+requires-python = ">=3.11"
 dependencies = [
     "pulpcore>=3.85.0,<3.100"
 ]
@@ -32,6 +32,9 @@ pulp_tofu = "pulp_tofu:default_app_config"
 
 [project.entry-points."pytest11"]
 pulp_tofu = "pulp_tofu.pytest_plugin"
+
+[tool.setuptools.packages.find]
+where = ["."]
 
 [tool.towncrier]
 package = "pulp-tofu"

@@ -53,7 +53,7 @@ class Migration(migrations.Migration):
                 ('os', models.TextField(help_text="Operating system (e.g., 'linux', 'darwin', 'windows')")),
                 ('arch', models.TextField(help_text="CPU architecture (e.g., 'amd64', 'arm', 'arm64')")),
                 ('filename', models.TextField(help_text="The filename for this provider's zip archive")),
-                ('shasum', models.TextField(help_text='SHA256 checksum for the provider package')),
+                ('shasum', models.CharField(db_index=True, max_length=64, help_text='SHA256 checksum for the provider package')),
                 ('protocols', models.JSONField(default=list, help_text="Supported OpenTofu provider API versions (e.g., ['4.0', '5.1'])")),
                 ('download_url', models.TextField(blank=True, null=True, help_text='The URL from which the provider package can be downloaded')),
                 ('_pulp_domain', models.ForeignKey(default=pulpcore.app.util.get_domain_pk, on_delete=django.db.models.deletion.PROTECT, to='core.domain')),

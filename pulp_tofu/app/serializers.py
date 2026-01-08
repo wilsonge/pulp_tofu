@@ -24,6 +24,9 @@ class ProviderSerializer(platform.SingleArtifactContentSerializer):
     has a single artifact (the provider zip archive).
     """
 
+    artifact = platform.SingleContentArtifactField(
+        help_text=_("Artifact file representing the physical content"),
+    )
     namespace = serializers.CharField(
         help_text=_("The organization or user that publishes the provider"),
         required=True,
@@ -63,30 +66,31 @@ class ProviderSerializer(platform.SingleArtifactContentSerializer):
         allow_null=True,
     )
 
-    def deferred_validate(self, data):
-        """
-        Validate and set the relative_path for the provider content.
-
-        The relative_path is constructed from the provider's identifying fields
-        to create a unique storage path: {namespace}/{type}/{version}/{os}_{arch}/{filename}
-        """
-        data = super().deferred_validate(data)
-
-        # Construct the relative_path from the provider's identifying fields
-        namespace = data.get("namespace")
-        provider_type = data.get("type")
-        version = data.get("version")
-        os = data.get("os")
-        arch = data.get("arch")
-        filename = data.get("filename")
-
-        # Set the relative_path for the artifact
-        data["relative_path"] = f"{namespace}/{provider_type}/{version}/{os}_{arch}/{filename}"
-
-        return data
+    # def deferred_validate(self, data):
+    #     """
+    #     Validate and set the relative_path for the provider content.
+    #
+    #     The relative_path is constructed from the provider's identifying fields
+    #     to create a unique storage path: {namespace}/{type}/{version}/{os}_{arch}/{filename}
+    #     """
+    #     data = super().deferred_validate(data)
+    #
+    #     # Construct the relative_path from the provider's identifying fields
+    #     namespace = data.get("namespace")
+    #     provider_type = data.get("type")
+    #     version = data.get("version")
+    #     os = data.get("os")
+    #     arch = data.get("arch")
+    #     filename = data.get("filename")
+    #
+    #     # Set the relative_path for the artifact
+    #     data["relative_path"] = f"{namespace}/{provider_type}/{version}/{os}_{arch}/{filename}"
+    #
+    #     return data
 
     class Meta:
         fields = platform.SingleArtifactContentSerializer.Meta.fields + (
+            "artifact",
             "namespace",
             "type",
             "version",

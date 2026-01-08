@@ -55,3 +55,7 @@ TOFU_LARGE_FIXTURE_URL = urljoin(PULP_FIXTURES_BASE_URL, "tofu_large/")
 # FIXME: replace this with the actual number of content units in your test fixture
 TOFU_LARGE_FIXTURE_COUNT = 25
 """The number of content units available at :data:`TOFU_LARGE_FIXTURE_URL`."""
+
+# OpenTofu Registry constants
+REGISTRY_URL = "https://registry.opentofu.org"
+"""The OpenTofu registry URL."""

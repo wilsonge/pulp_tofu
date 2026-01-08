@@ -13,7 +13,7 @@ from pulp_tofu.tests.functional.utils import (
 )
 from pulp_tofu.tests.functional.utils import set_up_module as setUpModule  # noqa:F401
 
-from pulpcore.client.pulp_tofu import ContentTofuApi
+from pulpcore.client.pulp_tofu import ContentProvidersApi
 
 
 # Read the instructions provided below for the steps needed to enable this test (see: FIXME's).
@@ -33,7 +33,7 @@ class ContentUnitTestCase(unittest.TestCase):
         """Create class-wide variable."""
         delete_orphans()
         cls.content_unit = {}
-        cls.tofu_content_api = ContentTofuApi(gen_tofu_client())
+        cls.tofu_content_api = ContentProvidersApi(gen_tofu_client())
         cls.artifact = gen_artifact()
 
     @classmethod

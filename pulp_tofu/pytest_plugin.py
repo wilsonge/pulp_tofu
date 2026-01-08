@@ -95,7 +95,7 @@ def get_tofu_content_paths(tofu_bindings):
 
         repo_version = tofu_bindings.RepositoriesTofuVersionsApi.read(version_href)
 
-        content = tofu_bindings.ContentPackagesApi.list(
+        content = tofu_bindings.ContentProvidersApi.list(
             repository_version=repo_version.pulp_href
         ).results
 

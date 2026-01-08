@@ -17,9 +17,9 @@ from pulp_smash.pulp3.constants import (
 # DOWNLOAD_POLICIES = ["immediate", "streamed", "on_demand"]
 DOWNLOAD_POLICIES = ["immediate"]
 
-TOFU_CONTENT_NAME = "tofu.tofu"
+TOFU_CONTENT_NAME = "tofu.provider"
 
-TOFU_CONTENT_PATH = urljoin(BASE_CONTENT_PATH, "tofu/tofu/")
+TOFU_CONTENT_PATH = urljoin(BASE_CONTENT_PATH, "tofu/providers/")
 
 TOFU_REMOTE_PATH = urljoin(BASE_REMOTE_PATH, "tofu/tofu/")
 

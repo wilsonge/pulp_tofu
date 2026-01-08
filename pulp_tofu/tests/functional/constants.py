@@ -1,7 +1,7 @@
 """Constants for Pulp Tofu plugin tests."""
 
-import os
-from urllib.parse import urljoin
+# import os
+# from urllib.parse import urljoin
 
 # PULP_FIXTURES_BASE_URL = os.environ.get(
 #     "REMOTE_FIXTURES_ORIGIN", "https://fixtures.pulpproject.org/"
@@ -14,7 +14,10 @@ from urllib.parse import urljoin
 # Intended to be used with the XS specifier
 TOFU_PROVIDER_VERSION = "3.7.2"
 TOFU_PROVIDER_FILENAME = f"terraform-provider-random_{TOFU_PROVIDER_VERSION}_linux_arm.zip"
-TOFU_PROVIDER_URL = f"https://github.com/opentofu/terraform-provider-random/releases/download/v{TOFU_PROVIDER_VERSION}/{TOFU_PROVIDER_FILENAME}"
+BASE_GITHUB_URL = "https://github.com/opentofu/terraform-provider-random"
+TOFU_PROVIDER_URL = (
+    f"{BASE_GITHUB_URL}/releases/download/v{TOFU_PROVIDER_VERSION}/" f"{TOFU_PROVIDER_FILENAME}"
+)
 TOFU_PROVIDER_SHA256 = "7371c2cc28c94deb9dba62fbac2685f7dde47f93019273a758dd5a2794f72919"
 
 TOFU_PROVIDER_DATA = {

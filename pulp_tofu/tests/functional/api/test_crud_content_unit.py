@@ -1,19 +1,22 @@
 import pytest
 
-#from urllib.parse import urljoin
+# from urllib.parse import urljoin
 
-from pulpcore.tests.functional.utils import PulpTaskError
 from pulp_tofu.tests.functional.constants import (
-#  TOFU_FIXTURES_URL,
-  TOFU_PROVIDER_DATA,
-  TOFU_PROVIDER_FILENAME,
-  TOFU_PROVIDER_URL,
-#  TOFU_PROVIDER_FIXTURE_CHECKSUMS,
+    # TOFU_FIXTURES_URL,
+    TOFU_PROVIDER_DATA,
+    TOFU_PROVIDER_FILENAME,
+    TOFU_PROVIDER_URL,
+    # TOFU_PROVIDER_FIXTURE_CHECKSUMS,
 )
 
 
 def test_content_crud(
-        tofu_bindings, pulpcore_bindings, tofu_repository_factory, download_tofu_file, monitor_task
+    tofu_bindings,
+    pulpcore_bindings,
+    tofu_repository_factory,
+    download_tofu_file,
+    monitor_task,
 ):
     """Test CRUD provider content unit."""
     monitor_task(pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task)

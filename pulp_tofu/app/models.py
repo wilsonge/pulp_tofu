@@ -7,7 +7,6 @@ Check `Plugin Writer's Guide`_ for more details.
 
 from logging import getLogger
 
-from pathlib import PurePath
 from django.db import models
 
 from pulpcore.plugin.models import (
@@ -17,7 +16,7 @@ from pulpcore.plugin.models import (
     Publication,
     Distribution,
 )
-from pulpcore.plugin.util import get_domain_pk, get_domain
+from pulpcore.plugin.util import get_domain_pk
 
 logger = getLogger(__name__)
 

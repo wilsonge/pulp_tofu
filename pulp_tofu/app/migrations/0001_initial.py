@@ -61,6 +61,9 @@ class Migration(migrations.Migration):
             options={
                 'default_related_name': '%(app_label)s_%(model_name)s',
                 'unique_together': {('namespace', 'type', 'version', 'os', 'arch', '_pulp_domain')},
+                'permissions': [
+                    ("upload_provider_packages", "Can upload Provider packages using synchronous API."),
+                ],
             },
             bases=('core.content',),
         ),

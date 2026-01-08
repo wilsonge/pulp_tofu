@@ -26,7 +26,8 @@ def test_content_crud(
     artifact = pulpcore_bindings.ArtifactsApi.create(tofu_file)
 
     # Test create
-    content_body = {**TOFU_PROVIDER_CREATE_DATA, "artifact": artifact.pulp_href}
+    content_body = TOFU_PROVIDER_CREATE_DATA.copy()
+    content_body["artifact"] = artifact.pulp_href
     response = tofu_bindings.ContentProvidersApi.create(**content_body)
     task = monitor_task(response.task)
     content = tofu_bindings.ContentProvidersApi.read(task.created_resources[0])

@@ -7,6 +7,7 @@ Check `Plugin Writer's Guide`_ for more details.
 
 from logging import getLogger
 
+from pathlib import PurePath
 from django.db import models
 
 from pulpcore.plugin.models import (
@@ -16,6 +17,7 @@ from pulpcore.plugin.models import (
     Publication,
     Distribution,
 )
+from pulpcore.plugin.util import get_domain_pk, get_domain
 
 logger = getLogger(__name__)
 
@@ -57,10 +59,11 @@ class Provider(Content):
     download_url = models.TextField(
         null=True, blank=True, help_text="The URL from which the provider package can be downloaded"
     )
+    _pulp_domain = models.ForeignKey("core.Domain", default=get_domain_pk, on_delete=models.PROTECT)
 
     class Meta:
         default_related_name = "%(app_label)s_%(model_name)s"
-        unique_together = ("namespace", "type", "version", "os", "arch")
+        unique_together = ("namespace", "type", "version", "os", "arch", "_pulp_domain")
 
 
 class TofuPublication(Publication):

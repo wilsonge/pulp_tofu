@@ -1,6 +1,6 @@
-import django.contrib.postgres.fields.jsonb
 from django.db import migrations, models
 import django.db.models.deletion
+import pulpcore.app.util
 
 
 class Migration(migrations.Migration):
@@ -56,10 +56,11 @@ class Migration(migrations.Migration):
                 ('shasum', models.TextField(help_text='SHA256 checksum for the provider package')),
                 ('protocols', models.JSONField(default=list, help_text="Supported OpenTofu provider API versions (e.g., ['4.0', '5.1'])")),
                 ('download_url', models.TextField(blank=True, null=True, help_text='The URL from which the provider package can be downloaded')),
+                ('_pulp_domain', models.ForeignKey(default=pulpcore.app.util.get_domain_pk, on_delete=django.db.models.deletion.PROTECT, to='core.domain')),
             ],
             options={
                 'default_related_name': '%(app_label)s_%(model_name)s',
-                'unique_together': {('namespace', 'type', 'version', 'os', 'arch')},
+                'unique_together': {('namespace', 'type', 'version', 'os', 'arch', '_pulp_domain')},
             },
             bases=('core.content',),
         ),

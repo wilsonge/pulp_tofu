@@ -29,7 +29,7 @@ TOFU_PROVIDER_CREATE_DATA = {
     "filename": TOFU_PROVIDER_FILENAME,
     "shasum": TOFU_PROVIDER_SHA256,
     "protocols": ["5.0"],
-    "relative_path": f"opentofu/random/{TOFU_PROVIDER_VERSION}/linux_arm/{TOFU_PROVIDER_FILENAME}"
+    "relative_path": f"opentofu/random/{TOFU_PROVIDER_VERSION}/linux_arm/{TOFU_PROVIDER_FILENAME}",
 }
 
 TOFU_PROVIDER_DATA = {

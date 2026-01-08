@@ -4,6 +4,7 @@ import pytest
 
 from pulp_tofu.tests.functional.constants import (
     # TOFU_FIXTURES_URL,
+    TOFU_PROVIDER_CREATE_DATA,
     TOFU_PROVIDER_DATA,
     TOFU_PROVIDER_FILENAME,
     TOFU_PROVIDER_URL,
@@ -25,7 +26,7 @@ def test_content_crud(
     artifact = pulpcore_bindings.ArtifactsApi.create(tofu_file)
 
     # Test create
-    content_body = {"relative_path": TOFU_PROVIDER_FILENAME, "artifact": artifact.pulp_href}
+    content_body = {**TOFU_PROVIDER_CREATE_DATA, "artifact": artifact.pulp_href}
     response = tofu_bindings.ContentProvidersApi.create(**content_body)
     task = monitor_task(response.task)
     content = tofu_bindings.ContentProvidersApi.read(task.created_resources[0])
@@ -33,27 +34,27 @@ def test_content_crud(
         assert getattr(content, k) == v
 
     # Test read
-    result = tofu_bindings.ContentPackagesApi.list(filename=content.filename)
+    result = tofu_bindings.ContentProvidersApi.list(filename=content.filename)
     assert result.count == 1
     assert result.results[0] == content
 
     # Test partial update
     with pytest.raises(AttributeError) as e:
-        tofu_bindings.ContentPackagesApi.partial_update(content.pulp_href, {"filename": "te"})
+        tofu_bindings.ContentProvidersApi.partial_update(content.pulp_href, {"filename": "te"})
     assert "object has no attribute 'partial_update'" in e.value.args[0]
 
     # Test delete
     with pytest.raises(AttributeError) as e:
-        tofu_bindings.ContentPackagesApi.delete(content.pulp_href)
+        tofu_bindings.ContentProvidersApi.delete(content.pulp_href)
     assert "object has no attribute 'delete'" in e.value.args[0]
 
     monitor_task(pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task)
 
     # Test create w/ file
-    content_body = {"relative_path": TOFU_PROVIDER_FILENAME, "file": tofu_file}
-    response = tofu_bindings.ContentPackagesApi.create(**content_body)
+    content_body = {**TOFU_PROVIDER_CREATE_DATA, "file": tofu_file}
+    response = tofu_bindings.ContentProvidersApi.create(**content_body)
     task = monitor_task(response.task)
-    content = tofu_bindings.ContentPackagesApi.read(task.created_resources[0])
+    content = tofu_bindings.ContentProvidersApi.read(task.created_resources[0])
     for k, v in TOFU_PROVIDER_DATA.items():
         assert getattr(content, k) == v
 
@@ -61,19 +62,19 @@ def test_content_crud(
 
     # Test create w/ file & repository
     repo = tofu_repository_factory()
-    response = tofu_bindings.ContentPackagesApi.create(repository=repo.pulp_href, **content_body)
+    response = tofu_bindings.ContentProvidersApi.create(repository=repo.pulp_href, **content_body)
     task = monitor_task(response.task)
     assert len(task.created_resources) == 2
-    content_search = tofu_bindings.ContentPackagesApi.list(
+    content_search = tofu_bindings.ContentProvidersApi.list(
         repository_version_added=task.created_resources[0]
     )
-    content = tofu_bindings.ContentPackagesApi.read(content_search.results[0].pulp_href)
+    content = tofu_bindings.ContentProvidersApi.read(content_search.results[0].pulp_href)
     for k, v in TOFU_PROVIDER_DATA.items():
         assert getattr(content, k) == v
 
     # Test duplicate upload
-    content_body = {"relative_path": TOFU_PROVIDER_FILENAME, "file": tofu_file}
-    response = tofu_bindings.ContentPackagesApi.create(**content_body)
+    content_body = {**TOFU_PROVIDER_CREATE_DATA, "file": tofu_file}
+    response = tofu_bindings.ContentProvidersApi.create(**content_body)
     task = monitor_task(response.task)
     assert task.created_resources[0] == content.pulp_href
 
@@ -81,20 +82,20 @@ def test_content_crud(
     # second_python_url = urljoin(urljoin(PYTHON_FIXTURES_URL, "packages/"), "aiohttp-3.3.0.tar.gz")
     # second_python_file = download_tofu_file("aiohttp-3.3.0.tar.gz", second_python_url)
     # content_body = {"relative_path": TOFU_PROVIDER_FILENAME, "file": second_python_file}
-    # response = tofu_bindings.ContentPackagesApi.create(**content_body)
+    # response = tofu_bindings.ContentProvidersApi.create(**content_body)
     # task = monitor_task(response.task)
-    # content2 = tofu_bindings.ContentPackagesApi.read(task.created_resources[0])
+    # content2 = tofu_bindings.ContentProvidersApi.read(task.created_resources[0])
     # assert content2.pulp_href != content.pulp_href
 
     # Test upload same filename w/ different artifacts in same repo
     # repo already has EGG_FILENAME w/ EGG_ARTIFACT, not upload EGG_FILENAME w/ AIO_ARTIFACT
     # and see that repo will only have the second content unit inside after upload
-    # response = tofu_bindings.ContentPackagesApi.create(repository=repo.pulp_href, **content_body)
+    # response = tofu_bindings.ContentProvidersApi.create(repository=repo.pulp_href, **content_body)
     # task = monitor_task(response.task)
     # assert len(task.created_resources) == 2
     # assert content2.pulp_href in task.created_resources
     # repo_ver2 = task.created_resources[0]
-    # content_list = tofu_bindings.ContentPackagesApi.list(repository_version=repo_ver2)
+    # content_list = tofu_bindings.ContentProvidersApi.list(repository_version=repo_ver2)
     # assert content_list.count == 1
     # assert content_list.results[0].pulp_href == content2.pulp_href
 
@@ -109,7 +110,7 @@ def test_content_crud(
     #     "sha256": mismatch_sha256,
     # }
     # with pytest.raises(PulpTaskError) as e:
-    #     response = tofu_bindings.ContentPackagesApi.create(**content_body)
+    #     response = tofu_bindings.ContentProvidersApi.create(**content_body)
     #     monitor_task(response.task)
     # msg = "The uploaded artifact's sha256 checksum does not match the one provided"
     # assert msg in e.value.task.error["description"]
@@ -127,9 +128,9 @@ def test_content_crud(
 #     python_file = download_python_file(python_egg_filename, python_egg_url)
 #
 #     body = {"relative_path": python_egg_filename, "file": python_file}
-#     response = python_bindings.ContentPackagesApi.create(**body)
+#     response = python_bindings.ContentProvidersApi.create(**body)
 #     task = monitor_task(response.task)
-#     content = python_bindings.ContentPackagesApi.read(task.created_resources[0])
+#     content = python_bindings.ContentProvidersApi.read(task.created_resources[0])
 #
 #     python_package_data = {
 #         "filename": "setuptools-80.9.0.tar.gz",

@@ -20,30 +20,26 @@ TOFU_PROVIDER_URL = (
 )
 TOFU_PROVIDER_SHA256 = "7371c2cc28c94deb9dba62fbac2685f7dde47f93019273a758dd5a2794f72919"
 
+TOFU_PROVIDER_CREATE_DATA = {
+    "namespace": "opentofu",
+    "type": "random",
+    "version": TOFU_PROVIDER_VERSION,
+    "os": "linux",
+    "arch": "arm",
+    "filename": TOFU_PROVIDER_FILENAME,
+    "shasum": TOFU_PROVIDER_SHA256,
+    "protocols": ["5.0"],
+}
+
 TOFU_PROVIDER_DATA = {
-    "filename": "shelf-reader-0.1.tar.gz",
-    "packagetype": "sdist",
-    "name": "shelf-reader",
-    "version": "0.1",
-    "metadata_version": "1.1",
-    "summary": "Make sure your collections are in call number order.",
-    "keywords": "",
-    "home_page": "https://github.com/asmacdo/shelf-reader",
-    "download_url": "",
-    "author": "Austin Macdonald",
-    "author_email": "asmacdo@gmail.com",
-    "maintainer": "",
-    "maintainer_email": "",
-    "license": "GNU GENERAL PUBLIC LICENSE Version 2, June 1991",
-    "requires_python": "",
-    "project_url": "",
-    "platform": "",
-    "supported_platform": "",
-    "requires_dist": "[]",
-    "provides_dist": "[]",
-    "obsoletes_dist": "[]",
-    "requires_external": "[]",
-    "classifiers": "[]",
+    "namespace": "opentofu",
+    "type": "random",
+    "version": TOFU_PROVIDER_VERSION,
+    "os": "linux",
+    "arch": "arm",
+    "filename": TOFU_PROVIDER_FILENAME,
+    "shasum": TOFU_PROVIDER_SHA256,
+    "protocols": ["5.0"],
 }
 
 # OpenTofu Registry constants

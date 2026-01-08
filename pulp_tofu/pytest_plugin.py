@@ -36,6 +36,19 @@ def tofu_repository_factory(tofu_bindings, gen_object_with_cleanup):
 
 
 @pytest.fixture(scope="class")
+def download_tofu_file(tmp_path, http_get):
+    """Download a Tofu file and return its path."""
+
+    def _download_tofu_file(relative_path, url):
+        file_path = tmp_path / relative_path
+        with open(file_path, mode="wb") as f:
+            f.write(http_get(url))
+        return str(file_path)
+
+    yield _download_tofu_file
+
+
+@pytest.fixture(scope="class")
 def tofu_remote_factory(tofu_bindings, gen_object_with_cleanup):
     def _tofu_remote_factory(url=None, policy="immediate", pulp_domain=None, **body):
         name = body.get("name") or str(uuid.uuid4())

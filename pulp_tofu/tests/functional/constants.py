@@ -1,61 +1,48 @@
 """Constants for Pulp Tofu plugin tests."""
 
+import os
 from urllib.parse import urljoin
 
-from pulp_smash.constants import PULP_FIXTURES_BASE_URL
-from pulp_smash.pulp3.constants import (
-    BASE_DISTRIBUTION_PATH,
-    BASE_PUBLICATION_PATH,
-    BASE_REMOTE_PATH,
-    BASE_REPO_PATH,
-    BASE_CONTENT_PATH,
-)
+# PULP_FIXTURES_BASE_URL = os.environ.get(
+#     "REMOTE_FIXTURES_ORIGIN", "https://fixtures.pulpproject.org/"
+# )
+#
+# TOFU_FIXTURES_URL = urljoin(PULP_FIXTURES_BASE_URL, "tofu/")
 
-# FIXME: list any download policies supported by your plugin type here.
-# If your plugin supports all download policies, you can import this
-# from pulp_smash.pulp3.constants instead.
-# DOWNLOAD_POLICIES = ["immediate", "streamed", "on_demand"]
-DOWNLOAD_POLICIES = ["immediate"]
+# PULP_TOFU_BASE_URL = "/tofu/"
 
-TOFU_CONTENT_NAME = "tofu.provider"
+# Intended to be used with the XS specifier
+TOFU_PROVIDER_VERSION = "3.7.2"
+TOFU_PROVIDER_FILENAME = f"terraform-provider-random_{TOFU_PROVIDER_VERSION}_linux_arm.zip"
+TOFU_PROVIDER_URL = f"https://github.com/opentofu/terraform-provider-random/releases/download/v{TOFU_PROVIDER_VERSION}/{TOFU_PROVIDER_FILENAME}"
+TOFU_PROVIDER_SHA256 = "7371c2cc28c94deb9dba62fbac2685f7dde47f93019273a758dd5a2794f72919"
 
-TOFU_CONTENT_PATH = urljoin(BASE_CONTENT_PATH, "tofu/providers/")
-
-TOFU_REMOTE_PATH = urljoin(BASE_REMOTE_PATH, "tofu/tofu/")
-
-TOFU_REPO_PATH = urljoin(BASE_REPO_PATH, "tofu/tofu/")
-
-TOFU_PUBLICATION_PATH = urljoin(BASE_PUBLICATION_PATH, "tofu/tofu/")
-
-TOFU_DISTRIBUTION_PATH = urljoin(BASE_DISTRIBUTION_PATH, "tofu/tofu/")
-
-# FIXME: replace this with your own fixture repository URL and metadata
-TOFU_FIXTURE_URL = urljoin(PULP_FIXTURES_BASE_URL, "tofu/")
-"""The URL to a tofu repository."""
-
-# FIXME: replace this with the actual number of content units in your test fixture
-TOFU_FIXTURE_COUNT = 3
-"""The number of content units available at :data:`TOFU_FIXTURE_URL`."""
-
-TOFU_FIXTURE_SUMMARY = {TOFU_CONTENT_NAME: TOFU_FIXTURE_COUNT}
-"""The desired content summary after syncing :data:`TOFU_FIXTURE_URL`."""
-
-# FIXME: replace this with the location of one specific content unit of your choosing
-TOFU_URL = urljoin(TOFU_FIXTURE_URL, "")
-"""The URL to an tofu file at :data:`TOFU_FIXTURE_URL`."""
-
-# FIXME: replace this with your own fixture repository URL and metadata
-TOFU_INVALID_FIXTURE_URL = urljoin(PULP_FIXTURES_BASE_URL, "tofu-invalid/")
-"""The URL to an invalid tofu repository."""
-
-# FIXME: replace this with your own fixture repository URL and metadata
-TOFU_LARGE_FIXTURE_URL = urljoin(PULP_FIXTURES_BASE_URL, "tofu_large/")
-"""The URL to a tofu repository containing a large number of content units."""
-
-# FIXME: replace this with the actual number of content units in your test fixture
-TOFU_LARGE_FIXTURE_COUNT = 25
-"""The number of content units available at :data:`TOFU_LARGE_FIXTURE_URL`."""
+TOFU_PROVIDER_DATA = {
+    "filename": "shelf-reader-0.1.tar.gz",
+    "packagetype": "sdist",
+    "name": "shelf-reader",
+    "version": "0.1",
+    "metadata_version": "1.1",
+    "summary": "Make sure your collections are in call number order.",
+    "keywords": "",
+    "home_page": "https://github.com/asmacdo/shelf-reader",
+    "download_url": "",
+    "author": "Austin Macdonald",
+    "author_email": "asmacdo@gmail.com",
+    "maintainer": "",
+    "maintainer_email": "",
+    "license": "GNU GENERAL PUBLIC LICENSE Version 2, June 1991",
+    "requires_python": "",
+    "project_url": "",
+    "platform": "",
+    "supported_platform": "",
+    "requires_dist": "[]",
+    "provides_dist": "[]",
+    "obsoletes_dist": "[]",
+    "requires_external": "[]",
+    "classifiers": "[]",
+}
 
 # OpenTofu Registry constants
-REGISTRY_URL = "https://registry.opentofu.org"
+OPEN_TOFU_REGISTRY_URL = "https://registry.opentofu.org"
 """The OpenTofu registry URL."""

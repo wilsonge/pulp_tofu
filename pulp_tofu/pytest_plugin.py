@@ -35,7 +35,7 @@ def tofu_repository_factory(tofu_bindings, gen_object_with_cleanup):
     return _tofu_repository_factory
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="function")
 def download_tofu_file(tmp_path, http_get):
     """Download a Tofu file and return its path."""
 

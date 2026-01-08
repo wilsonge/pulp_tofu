@@ -51,7 +51,9 @@ class Provider(Content):
 
     # Provider package metadata
     filename = models.TextField(help_text="The filename for this provider's zip archive")
-    shasum = models.CharField(db_index=True, max_length=64, help_text='SHA256 checksum for the provider package')
+    shasum = models.CharField(
+        db_index=True, max_length=64, help_text='SHA256 checksum for the provider package'
+    )
     protocols = models.JSONField(
         default=list, help_text="Supported OpenTofu provider API versions (e.g., ['4.0', '5.1'])"
     )

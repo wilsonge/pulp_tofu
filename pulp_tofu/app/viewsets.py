@@ -56,24 +56,24 @@ class ProviderViewSet(core.ContentViewSet):
     serializer_class = serializers.ProviderSerializer
     filterset_class = ProviderFilter
 
-    @transaction.atomic
-    def create(self, request):
-        """
-        Create a Provider unit with its associated artifact.
-
-        Each OpenTofu provider has a single artifact (the provider zip archive).
-        The artifact is associated with a relative path based on the provider's
-        namespace, type, version, os, and arch.
-
-        The relative_path is automatically generated as:
-        {namespace}/{type}/{version}/{os}_{arch}/{filename}
-        """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    # @transaction.atomic
+    # def create(self, request):
+    #     """
+    #     Create a Provider unit with its associated artifact.
+    #
+    #     Each OpenTofu provider has a single artifact (the provider zip archive).
+    #     The artifact is associated with a relative path based on the provider's
+    #     namespace, type, version, os, and arch.
+    #
+    #     The relative_path is automatically generated as:
+    #     {namespace}/{type}/{version}/{os}_{arch}/{filename}
+    #     """
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.save()
+    #
+    #     headers = self.get_success_headers(serializer.data)
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @extend_schema(
         description="List all providers for a given namespace and type",

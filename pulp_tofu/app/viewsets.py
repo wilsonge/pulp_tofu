@@ -5,10 +5,11 @@ Check `Plugin Writer's Guide`_ for more details.
     https://docs.pulpproject.org/pulpcore/plugins/plugin-writer/index.html
 """
 
-from django.db import transaction
+# from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import status
+
+# from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 

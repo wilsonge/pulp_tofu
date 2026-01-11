@@ -1,107 +1,185 @@
-"""Tests that perform actions over content unit."""
+import pytest
 
-import unittest
+# from urllib.parse import urljoin
 
-from pulp_smash.pulp3.utils import delete_orphans
-from pulp_smash.pulp3.bindings import monitor_task
-
-from pulp_tofu.tests.functional.utils import (
-    gen_artifact,
-    gen_tofu_client,
-    gen_tofu_content_attrs,
-    skip_if,
+from pulp_tofu.tests.functional.constants import (
+    # TOFU_FIXTURES_URL,
+    TOFU_PROVIDER_CREATE_DATA,
+    TOFU_PROVIDER_DATA,
+    TOFU_PROVIDER_FILENAME,
+    TOFU_PROVIDER_URL,
+    # TOFU_PROVIDER_FIXTURE_CHECKSUMS,
 )
-from pulp_tofu.tests.functional.utils import set_up_module as setUpModule  # noqa:F401
-
-from pulpcore.client.pulp_tofu import ContentTofuApi
 
 
-# Read the instructions provided below for the steps needed to enable this test (see: FIXME's).
-@unittest.skip("FIXME: plugin writer action required")
-class ContentUnitTestCase(unittest.TestCase):
-    """CRUD content unit.
+def test_content_crud(
+    tofu_bindings,
+    pulpcore_bindings,
+    tofu_repository_factory,
+    download_tofu_file,
+    monitor_task,
+):
+    """Test CRUD provider content unit."""
+    monitor_task(pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task)
+    tofu_file = download_tofu_file(TOFU_PROVIDER_FILENAME, TOFU_PROVIDER_URL)
 
-    This test targets the following issues:
+    artifact = pulpcore_bindings.ArtifactsApi.create(tofu_file)
 
-    * `Pulp #2872 <https://pulp.plan.io/issues/2872>`_
-    * `Pulp #3445 <https://pulp.plan.io/issues/3445>`_
-    * `Pulp Smash #870 <https://github.com/pulp/pulp-smash/issues/870>`_
-    """
+    # Test create
+    content_body = TOFU_PROVIDER_CREATE_DATA.copy()
+    content_body["artifact"] = artifact.pulp_href
+    response = tofu_bindings.ContentProvidersApi.create(tofu_provider=content_body)
+    print(response)
+    content = tofu_bindings.ContentProvidersApi.read(response)
+    for k, v in TOFU_PROVIDER_DATA.items():
+        assert getattr(content, k) == v
 
-    @classmethod
-    def setUpClass(cls):
-        """Create class-wide variable."""
-        delete_orphans()
-        cls.content_unit = {}
-        cls.tofu_content_api = ContentTofuApi(gen_tofu_client())
-        cls.artifact = gen_artifact()
+    # Test read
+    result = tofu_bindings.ContentProvidersApi.list(filename=content.filename)
+    assert result.count == 1
+    assert result.results[0] == content
 
-    @classmethod
-    def tearDownClass(cls):
-        """Clean class-wide variable."""
-        delete_orphans()
+    # Test partial update
+    with pytest.raises(AttributeError) as e:
+        tofu_bindings.ContentProvidersApi.partial_update(content.pulp_href, {"filename": "te"})
+    assert "object has no attribute 'partial_update'" in e.value.args[0]
 
-    def test_01_create_content_unit(self):
-        """Create content unit."""
-        attrs = gen_tofu_content_attrs(self.artifact)
-        response = self.tofu_content_api.create(**attrs)
-        created_resources = monitor_task(response.task).created_resources
-        content_unit = self.tofu_content_api.read(created_resources[0])
-        self.content_unit.update(content_unit.to_dict())
-        for key, val in attrs.items():
-            with self.subTest(key=key):
-                self.assertEqual(self.content_unit[key], val)
+    # Test delete
+    with pytest.raises(AttributeError) as e:
+        tofu_bindings.ContentProvidersApi.delete(content.pulp_href)
+    assert "object has no attribute 'delete'" in e.value.args[0]
 
-    @skip_if(bool, "content_unit", False)
-    def test_02_read_content_unit(self):
-        """Read a content unit by its href."""
-        content_unit = self.tofu_content_api.read(self.content_unit["pulp_href"]).to_dict()
-        for key, val in self.content_unit.items():
-            with self.subTest(key=key):
-                self.assertEqual(content_unit[key], val)
+    monitor_task(pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task)
 
-    @skip_if(bool, "content_unit", False)
-    def test_02_read_content_units(self):
-        """Read a content unit by its relative_path."""
-        # FIXME: "relative_path" is an attribute specific to the File plugin. It is only an
-        # example. You should replace this with some other field specific to your content type.
-        page = self.tofu_content_api.list(relative_path=self.content_unit["relative_path"])
-        self.assertEqual(len(page.results), 1)
-        for key, val in self.content_unit.items():
-            with self.subTest(key=key):
-                self.assertEqual(page.results[0].to_dict()[key], val)
+    # Test create w/ file
+    content_body = {**TOFU_PROVIDER_CREATE_DATA, "file": tofu_file}
+    response = tofu_bindings.ContentProvidersApi.create(**content_body)
+    task = monitor_task(response.task)
+    content = tofu_bindings.ContentProvidersApi.read(task.created_resources[0])
+    for k, v in TOFU_PROVIDER_DATA.items():
+        assert getattr(content, k) == v
 
-    @skip_if(bool, "content_unit", False)
-    def test_03_partially_update(self):
-        """Attempt to update a content unit using HTTP PATCH.
+    monitor_task(pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task)
 
-        This HTTP method is not supported and a HTTP exception is expected.
-        """
-        attrs = gen_tofu_content_attrs(self.artifact)
-        with self.assertRaises(AttributeError) as exc:
-            self.tofu_content_api.partial_update(self.content_unit["pulp_href"], attrs)
-        msg = "object has no attribute 'partial_update'"
-        self.assertIn(msg, exc.exception.args[0])
+    # Test create w/ file & repository
+    repo = tofu_repository_factory()
+    response = tofu_bindings.ContentProvidersApi.create(repository=repo.pulp_href, **content_body)
+    task = monitor_task(response.task)
+    assert len(task.created_resources) == 2
+    content_search = tofu_bindings.ContentProvidersApi.list(
+        repository_version_added=task.created_resources[0]
+    )
+    content = tofu_bindings.ContentProvidersApi.read(content_search.results[0].pulp_href)
+    for k, v in TOFU_PROVIDER_DATA.items():
+        assert getattr(content, k) == v
 
-    @skip_if(bool, "content_unit", False)
-    def test_03_fully_update(self):
-        """Attempt to update a content unit using HTTP PUT.
+    # Test duplicate upload
+    content_body = {**TOFU_PROVIDER_CREATE_DATA, "file": tofu_file}
+    response = tofu_bindings.ContentProvidersApi.create(**content_body)
+    task = monitor_task(response.task)
+    assert task.created_resources[0] == content.pulp_href
 
-        This HTTP method is not supported and a HTTP exception is expected.
-        """
-        attrs = gen_tofu_content_attrs(self.artifact)
-        with self.assertRaises(AttributeError) as exc:
-            self.tofu_content_api.update(self.content_unit["pulp_href"], attrs)
-        msg = "object has no attribute 'update'"
-        self.assertIn(msg, exc.exception.args[0])
+    # Test upload same filename w/ different artifact
+    # second_python_url = urljoin(urljoin(PYTHON_FIXTURES_URL, "packages/"), "aiohttp-3.3.0.tar.gz")
+    # second_python_file = download_tofu_file("aiohttp-3.3.0.tar.gz", second_python_url)
+    # content_body = {"relative_path": TOFU_PROVIDER_FILENAME, "file": second_python_file}
+    # response = tofu_bindings.ContentProvidersApi.create(**content_body)
+    # task = monitor_task(response.task)
+    # content2 = tofu_bindings.ContentProvidersApi.read(task.created_resources[0])
+    # assert content2.pulp_href != content.pulp_href
 
-    @skip_if(bool, "content_unit", False)
-    def test_04_delete(self):
-        """Attempt to delete a content unit using HTTP DELETE.
+    # Test upload same filename w/ different artifacts in same repo
+    # repo already has EGG_FILENAME w/ EGG_ARTIFACT, not upload EGG_FILENAME w/ AIO_ARTIFACT
+    # and see that repo will only have the second content unit inside after upload
+    # response = tofu_bindings.ContentProvidersApi.create(repository=repo.pulp_href, **content_body)
+    # task = monitor_task(response.task)
+    # assert len(task.created_resources) == 2
+    # assert content2.pulp_href in task.created_resources
+    # repo_ver2 = task.created_resources[0]
+    # content_list = tofu_bindings.ContentProvidersApi.list(repository_version=repo_ver2)
+    # assert content_list.count == 1
+    # assert content_list.results[0].pulp_href == content2.pulp_href
 
-        This HTTP method is not supported and a HTTP exception is expected.
-        """
-        with self.assertRaises(AttributeError) as exc:
-            self.tofu_content_api.delete(self.content_unit["pulp_href"])
-        msg = "object has no attribute 'delete'"
-        self.assertIn(msg, exc.exception.args[0])
+    # Test upload w/ mismatched sha256
+    # If we don't perform orphan cleanup here, the upload will fail with a different error :hmm:
+    # monitor_task(tofu_bindings.RepositoriesPythonApi.delete(repo.pulp_href).task)
+    # monitor_task(pulpcore_bindings.OrphansCleanupApi.cleanup({"orphan_protection_time": 0}).task)
+    # mismatch_sha256 = PYTHON_SM_FIXTURE_CHECKSUMS["aiohttp-3.3.0.tar.gz"]
+    # content_body = {
+    #     "relative_path": TOFU_PROVIDER_FILENAME,
+    #     "file": tofu_file,
+    #     "sha256": mismatch_sha256,
+    # }
+    # with pytest.raises(PulpTaskError) as e:
+    #     response = tofu_bindings.ContentProvidersApi.create(**content_body)
+    #     monitor_task(response.task)
+    # msg = "The uploaded artifact's sha256 checksum does not match the one provided"
+    # assert msg in e.value.task.error["description"]
+
+
+# def test_content_create_new_metadata(
+#         delete_orphans_pre, download_python_file, monitor_task, python_bindings
+# ):
+#     """
+#     Test the creation of python content unit with newly added core metadata (provides_extras,
+#     dynamic, license_expression, license_file).
+#     """
+#     python_egg_filename = "setuptools-80.9.0.tar.gz"
+#     python_egg_url = urljoin(urljoin(PYTHON_FIXTURES_URL, "packages/"), python_egg_filename)
+#     python_file = download_python_file(python_egg_filename, python_egg_url)
+#
+#     body = {"relative_path": python_egg_filename, "file": python_file}
+#     response = python_bindings.ContentProvidersApi.create(**body)
+#     task = monitor_task(response.task)
+#     content = python_bindings.ContentProvidersApi.read(task.created_resources[0])
+#
+#     python_package_data = {
+#         "filename": "setuptools-80.9.0.tar.gz",
+#         "provides_extras": '["test", "doc", "ssl", "certs",'
+#                            ' "core", "check", "cover", "enabler", "type"]',
+#         "dynamic": '["license-file"]',
+#         "license_expression": "MIT",
+#         "license_file": '["LICENSE"]',
+#     }
+#     for k, v in python_package_data.items():
+#         assert getattr(content, k) == v
+#
+#
+# @pytest.mark.parallel
+# def test_upload_metadata_23_spec(python_content_factory):
+#     """Test that packages using metadata spec 2.3 can be uploaded to pulp."""
+#     filename = "urllib3-2.2.2-py3-none-any.whl"
+#     with PyPISimple() as client:
+#         page = client.get_project_page("urllib3")
+#         for package in page.packages:
+#             if package.filename == filename:
+#                 content = python_content_factory(filename, url=package.url)
+#                 assert content.metadata_version == "2.3"
+#                 break
+#
+#
+# @pytest.mark.parallel
+# def test_upload_requires_python(python_content_factory):
+#     filename = "pip-24.3.1-py3-none-any.whl"
+#     with PyPISimple() as client:
+#         page = client.get_project_page("pip")
+#         for package in page.packages:
+#             if package.filename == filename:
+#                 content = python_content_factory(filename, url=package.url)
+#                 assert content.requires_python == ">=3.8"
+#                 break
+#
+#
+# @pytest.mark.parallel
+# def test_upload_metadata_24_spec(python_content_factory):
+#     """Test that packages using metadata spec 2.4 can be uploaded to pulp."""
+#     filename = "setuptools-80.9.0.tar.gz"
+#     with PyPISimple() as client:
+#         page = client.get_project_page("setuptools")
+#         for package in page.packages:
+#             if package.filename == filename:
+#                 content = python_content_factory(filename, url=package.url)
+#                 assert content.metadata_version == "2.4"
+#                 assert content.license_expression == "MIT"
+#                 assert content.license_file == '["LICENSE"]'
+#                 break

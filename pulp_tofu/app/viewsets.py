@@ -5,10 +5,11 @@ Check `Plugin Writer's Guide`_ for more details.
     https://docs.pulpproject.org/pulpcore/plugins/plugin-writer/index.html
 """
 
-from django.db import transaction
+# from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import status
+
+# from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -20,7 +21,6 @@ from pulpcore.plugin.serializers import (
     RepositorySyncURLSerializer,
 )
 from pulpcore.plugin.tasking import dispatch
-from pulpcore.plugin.models import ContentArtifact
 
 from . import models, serializers, tasks
 
@@ -57,24 +57,24 @@ class ProviderViewSet(core.ContentViewSet):
     serializer_class = serializers.ProviderSerializer
     filterset_class = ProviderFilter
 
-    @transaction.atomic
-    def create(self, request):
-        """
-        Create a Provider unit with its associated artifact.
-
-        Each OpenTofu provider has a single artifact (the provider zip archive).
-        The artifact is associated with a relative path based on the provider's
-        namespace, type, version, os, and arch.
-
-        The relative_path is automatically generated as:
-        {namespace}/{type}/{version}/{os}_{arch}/{filename}
-        """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    # @transaction.atomic
+    # def create(self, request):
+    #     """
+    #     Create a Provider unit with its associated artifact.
+    #
+    #     Each OpenTofu provider has a single artifact (the provider zip archive).
+    #     The artifact is associated with a relative path based on the provider's
+    #     namespace, type, version, os, and arch.
+    #
+    #     The relative_path is automatically generated as:
+    #     {namespace}/{type}/{version}/{os}_{arch}/{filename}
+    #     """
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.save()
+    #
+    #     headers = self.get_success_headers(serializer.data)
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @extend_schema(
         description="List all providers for a given namespace and type",
@@ -207,7 +207,10 @@ class ProviderViewSet(core.ContentViewSet):
     @action(
         detail=False,
         methods=["get"],
-        url_path=r"(?P<namespace>[^/]+)/(?P<type>[^/]+)/(?P<version>[^/]+)/(?P<os>[^/]+)/(?P<arch>[^/]+)",
+        url_path=(
+            r"(?P<namespace>[^/]+)/(?P<type>[^/]+)/(?P<version>[^/]+)/"
+            r"(?P<os>[^/]+)/(?P<arch>[^/]+)"
+        ),
         url_name="by-full-path",
     )
     def by_full_path(self, request, namespace=None, type=None, version=None, os=None, arch=None):

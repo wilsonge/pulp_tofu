@@ -24,6 +24,9 @@ class ProviderSerializer(platform.SingleArtifactContentSerializer):
     has a single artifact (the provider zip archive).
     """
 
+    artifact = platform.SingleContentArtifactField(
+        help_text=_("Artifact file representing the physical content"),
+    )
     namespace = serializers.CharField(
         help_text=_("The organization or user that publishes the provider"),
         required=True,
@@ -87,6 +90,7 @@ class ProviderSerializer(platform.SingleArtifactContentSerializer):
 
     class Meta:
         fields = platform.SingleArtifactContentSerializer.Meta.fields + (
+            "artifact",
             "namespace",
             "type",
             "version",

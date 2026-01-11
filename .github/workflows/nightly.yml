@@ -29,6 +29,9 @@ jobs:
   test:
     needs: "build"
     uses: "./.github/workflows/test.yml"
+    with:
+      matrix_env: |
+        [{"TEST": "pulp"}, {"TEST": "lowerbounds"}]
 
   changelog:
     runs-on: ubuntu-latest
@@ -38,14 +41,14 @@ jobs:
           fetch-depth: 0
           path: "pulp_tofu"
 
-      - uses: "actions/setup-python@v4"
+      - uses: "actions/setup-python@v5"
         with:
-          python-version: "3.11"
+          python-version: "3.13"
 
       - name: "Install python dependencies"
         run: |
           echo ::group::PYDEPS
-          pip install gitpython toml
+          pip install gitpython packaging toml
           echo ::endgroup::
 
       - name: "Configure Git with pulpbot name and email"
@@ -57,7 +60,7 @@ jobs:
         run: python .ci/scripts/collect_changes.py
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v4
+        uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
           title: "Update Changelog"
@@ -65,32 +68,4 @@ jobs:
           branch: "changelog/update"
           delete-branch: true
           path: "pulp_tofu"
-
-  publish:
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - uses: "actions/checkout@v4"
-        with:
-          fetch-depth: 1
-          path: "pulp_tofu"
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: "plugin_package"
-          path: "pulp_tofu/dist/"
-
-      - uses: "actions/setup-python@v4"
-        with:
-          python-version: "3.8"
-
-      - name: "Install python dependencies"
-        run: |
-          echo ::group::PYDEPS
-          pip install requests 'packaging~=21.3' mkdocs pymdown-extensions 'Jinja2<3.1'
-          echo ::endgroup::
-
-      - name: "Set environment variables"
-        run: |
-          echo "TEST=${{ matrix.env.TEST }}" >> $GITHUB_ENV
+...

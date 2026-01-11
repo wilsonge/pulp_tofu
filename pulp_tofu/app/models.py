@@ -11,12 +11,12 @@ from django.db import models
 
 from pulpcore.plugin.models import (
     Content,
-    ContentArtifact,
     Remote,
     Repository,
     Publication,
     Distribution,
 )
+from pulpcore.plugin.util import get_domain_pk
 
 logger = getLogger(__name__)
 
@@ -51,17 +51,23 @@ class Provider(Content):
 
     # Provider package metadata
     filename = models.TextField(help_text="The filename for this provider's zip archive")
-    shasum = models.TextField(help_text="SHA256 checksum for the provider package")
+    shasum = models.CharField(
+        db_index=True, max_length=64, help_text="SHA256 checksum for the provider package"
+    )
     protocols = models.JSONField(
         default=list, help_text="Supported OpenTofu provider API versions (e.g., ['4.0', '5.1'])"
     )
     download_url = models.TextField(
         null=True, blank=True, help_text="The URL from which the provider package can be downloaded"
     )
+    _pulp_domain = models.ForeignKey("core.Domain", default=get_domain_pk, on_delete=models.PROTECT)
 
     class Meta:
         default_related_name = "%(app_label)s_%(model_name)s"
-        unique_together = ("namespace", "type", "version", "os", "arch")
+        unique_together = ("namespace", "type", "version", "os", "arch", "_pulp_domain")
+        permissions = [
+            ("upload_provider_packages", "Can upload Provider packages using synchronous API."),
+        ]
 
 
 class TofuPublication(Publication):

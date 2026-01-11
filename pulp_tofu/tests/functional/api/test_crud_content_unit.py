@@ -29,6 +29,7 @@ def test_content_crud(
     content_body = TOFU_PROVIDER_CREATE_DATA.copy()
     content_body["artifact"] = artifact.pulp_href
     response = tofu_bindings.ContentProvidersApi.create(tofu_provider=content_body)
+    print(response)
     task = monitor_task(response.task)
     content = tofu_bindings.ContentProvidersApi.read(task.created_resources[0])
     for k, v in TOFU_PROVIDER_DATA.items():
